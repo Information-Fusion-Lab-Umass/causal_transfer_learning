@@ -61,6 +61,8 @@ class SourceEnv(BaseEnv):
 
     def reset(self):
         self.maze.objects.agent.positions = self.start_idx
+        a = self.free_positions
+        self.maze.objects.free.positions = [ x for x in a if not (x[0] == self.start_idx[0][0] and x[1] == self.start_idx[0][1])]
         return self.maze.to_value()
 
     def _is_valid(self, position):

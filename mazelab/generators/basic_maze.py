@@ -14,11 +14,6 @@ def basic_maze(width, height, switch_positions, prize_positions):
     x[:,0] = 1
     x[:,-1] = 1
 
-    # x[1,1: width-2] = 1
-    # x[width - 2,1: width-1] = 1
-    # x[1: height-2,1] = 1
-    # x[1: height-2, width -2] = 1
-
     for pos in switch_positions:
         x[pos[0],pos[1]] = 2
 
