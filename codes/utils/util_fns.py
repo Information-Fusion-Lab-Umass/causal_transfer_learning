@@ -1,14 +1,12 @@
 import numpy as np
-
-
 actions = {
 0: "up",
 1: "down",
 2: "left",
 3: "right"
 }
+
 def analyze(inp, colors_dict):
-    print(inp.shape)
     result = np.zeros((inp.shape[0], 17), dtype=np.dtype('a16'))
     for i in range(len(inp)):
         result[i, 0] = inp[i,0]
@@ -26,10 +24,3 @@ def analyze(inp, colors_dict):
 
 def decode_onehot(a):
     return np.where(a == 1)[0][0]
-
-f = np.load("./mat/oo_transition_matrix.npz", mmap_mode='r', allow_pickle=True)
-inp = f["mat"][:,0,:]
-c_dict = f["c_dict"][0]
-result = analyze(inp, c_dict)
-print(result.shape)
-print(result[:8])
