@@ -1,1 +1,1 @@
-from util_fns import analyze
+from codes.utils.util_fns import analyze
