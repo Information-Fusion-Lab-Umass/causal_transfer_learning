@@ -4,3 +4,5 @@ build/
 mat/
 dist/
 runs/
+model_.*
+*.png

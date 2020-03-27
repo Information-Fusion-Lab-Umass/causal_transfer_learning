@@ -23,10 +23,10 @@ def get_neighboring_objects(X, action_ohe):
 
                     if x_diff == 1 and y_diff == 0:
                         u = X[j,idx+1:]
+            features.append(u)
+            features.append(d)
             features.append(l)
             features.append(r)
-            features.append(d)
-            features.append(u)
             features.append(action_ohe)
 
             flat_list = []
