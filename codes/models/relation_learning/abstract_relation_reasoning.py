@@ -11,14 +11,16 @@ actions = {
 0: "up",
 1: "down",
 2: "left",
-3: "right"
+3: "right",
+4: "mixed_all"
 }
 
 actions_rev = {
 "up": 0,
 "down": 1,
 "left": 2,
-"right": 3
+"right": 3,
+"mixed_all": 4,
 }
 
 parser = argparse.ArgumentParser("Arguments for environment generation for causal concept understanding")
@@ -26,7 +28,7 @@ parser = argparse.ArgumentParser("Arguments for environment generation for causa
 parser.add_argument('--model', default="non_linear", choices = ['linear', 'non-linear'], help='type of model', required = True)
 parser.add_argument('--sparse', default = 1, choices = [1, 0], type = int, help='type of model', required = True)
 parser.add_argument('--mode', default="both", choices = ['train', 'eval', 'both'], help ='', required = True)
-parser.add_argument('--action', default="all", choices = ['up', 'down', 'left', 'right', 'all'], help ='', required = True)
+parser.add_argument('--action', default="all", choices = ['up', 'down', 'left', 'right', 'all', 'mixed_all'], help ='', required = True)
 
 args = parser.parse_args()
 
@@ -50,16 +52,24 @@ y_all = inp[odd_indices,:]
 x_all = x_all[:,1:]
 y_all = y_all[:,1:3]
 
-for a in range(4):
-    if args.action != "all":
+for a in range(5):
+    if a == 4 and args.action != "mixed_all":
+        continue
+
+    if args.action not in ["all"]:
         if actions_rev[args.action] != a:
             continue
+
     print("============== Action {} ===============".format(actions[a]))
 
     if args.mode in ["both", "train"]:
-        a_indices = np.arange(a, x_all.shape[0], 4)
+        if args.action == "mixed_all":
+            a_indices = np.arange(0, x_all.shape[0], 1)
+        else:
+            a_indices = np.arange(a, x_all.shape[0], 4)
         x = x_all[a_indices]
         y = y_all[a_indices]
+        print(x.shape, y.shape)
 
 
         N = x.shape[0]
@@ -100,4 +110,5 @@ for a in range(4):
         print(x[:1], y[:1], y_pred[:1])
         print(analyze(x[:1], c_dict), y[:1], y_pred[:1])
         print(model.fcl.weight)
-        plot_weight(model.fcl.weight.detach().numpy(), actions[a], dir = current_dir + "saved_models/")
+        plot_name = "model_" + args.model + "_" + actions[a] + "_sparse_" + str(args.sparse)
+        plot_weight(model.fcl.weight.detach().numpy(), plot_name, dir = current_dir + "saved_models/")
