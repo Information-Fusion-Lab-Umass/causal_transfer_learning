@@ -83,9 +83,9 @@ def get_attribute_sem():
 
     return result
 
-def plot_weight(w, action, dir):
+def plot_weight(w, plot_name, dir):
+    w = np.absolute(w)
     m, n = w.shape
-    print(m,n)
     x_label = get_attribute_sem()
     y_label = ["a.x", "a.y"]
     fig, ax = plt.subplots(figsize=(15,2))
@@ -110,4 +110,4 @@ def plot_weight(w, action, dir):
     #                        ha="center", va="center")
 
     ax.set_title("Weight values")
-    plt.savefig(dir + "{}_embeddings.png".format(action))
+    plt.savefig(dir + "{}_embed.png".format(plot_name))

@@ -9,8 +9,9 @@ from oo_representation import *
 parser = argparse.ArgumentParser("Arguments for environment generation for causal concept understanding")
 
 parser.add_argument('--env', default="source", help='type of environment')
-parser.add_argument('--n_episodes', default=300, type = int, metavar = "N", help='number of episodes')
-parser.add_argument('--n_len', default=500, type = int, metavar = "N", help='number of steps in each episode')
+parser.add_argument('--n_episodes', default=300, type = int,  help='number of episodes')
+parser.add_argument('--n_len', default=500, type = int, help='number of steps in each episode')
+parser.add_argument('--random_obstacles', default=0, type = int, help='flag to generate random obstacles')
 
 args = parser.parse_args()
 
@@ -19,7 +20,7 @@ def main():
     # prize_positions = [[7,6],[5,5]]
     switch_positions = []
     prize_positions = []
-    x = basic_maze(width=10, height = 10, switch_positions = switch_positions, prize_positions = prize_positions)
+    x = basic_maze(width=10, height = 10, switch_positions = switch_positions, prize_positions = prize_positions, random_obstacles = args.random_obstacles)
     start_idx = [[7, 2]]
     env_id = 'SourceMaze-v0'
 
