@@ -9,6 +9,7 @@ actions = {
 }
 
 def analyze(inp, colors_dict):
+    n_colors = len(colors_dict)
     if not isinstance(inp, np.ndarray):
         inp = inp.detach().numpy()
     result = np.zeros((inp.shape[0], 16), dtype=np.dtype('a16'))
@@ -18,11 +19,11 @@ def analyze(inp, colors_dict):
         for j in range(5):
             result[i, count] = inp[i, idx]
             result[i, count + 1] = inp[i, idx + 1]
-            color_ohe = decode_onehot(inp[i,idx + 2: idx + 7])
+            color_ohe = decode_onehot(inp[i,idx + 2: idx + 2 + n_colors])
             result[i, count + 2] = colors_dict[color_ohe]
-            idx = idx + 7
+            idx = idx + n_colors + 2
             count = count + 3
-        result[i, -1] = actions[decode_onehot(inp[i, 35:39])]
+        # result[i, -1] = actions[decode_onehot(inp[i, -4:])]
     return result
 
 def decode_onehot(a):
@@ -69,10 +70,10 @@ def get_attribute_sem():
             pre = actions[j-1][0] + "."
         result.append(pre + "x")
         result.append(pre + "y")
-        for i in range(2):
+        for i in range(1):
             result.append("")
         result.append(pre + "color")
-        for i in range(2):
+        for i in range(1):
             result.append("")
 
     for i in range(2):
@@ -110,4 +111,4 @@ def plot_weight(w, plot_name, dir):
     #                        ha="center", va="center")
 
     ax.set_title("Weight values")
-    plt.savefig(dir + "{}_embed.png".format(plot_name))
+    plt.savefig(plot_name)

@@ -4,5 +4,6 @@ build/
 mat/
 dist/
 runs/
-model_.*
+saved_models/
 *.png
+.DS_Store

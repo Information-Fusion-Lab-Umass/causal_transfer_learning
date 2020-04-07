@@ -25,10 +25,12 @@ actions_rev = {
 
 parser = argparse.ArgumentParser("Arguments for environment generation for causal concept understanding")
 
-parser.add_argument('--model', default="non_linear", choices = ['linear', 'non-linear'], help='type of model', required = True)
-parser.add_argument('--sparse', default = 1, choices = [1, 0], type = int, help='type of model', required = True)
-parser.add_argument('--mode', default="both", choices = ['train', 'eval', 'both'], help ='', required = True)
-parser.add_argument('--action', default="all", choices = ['up', 'down', 'left', 'right', 'all', 'mixed_all'], help ='', required = True)
+parser.add_argument('--model', default = "non_linear", choices = ['linear', 'non-linear'], help='type of model', required = True)
+parser.add_argument('--sparse', default = 0, choices = [1, 0], type = int, help='l1 regularization', required = True)
+parser.add_argument('--group_lasso', default = 0, choices = [1, 0], type = int, help='group lasso', required = True)
+parser.add_argument('--penalty', default = 1, type = float, help ='value for reg penalty', required = True)
+parser.add_argument('--mode', default = "both", choices = ['train', 'eval', 'both'], help ='', required = True)
+parser.add_argument('--action', default = "all", choices = ['up', 'down', 'left', 'right', 'all', 'mixed_all'], help ='', required = True)
 
 args = parser.parse_args()
 
@@ -37,8 +39,13 @@ torch.manual_seed(0)
 current_dir = "./codes/models/relation_learning/"
 #load data
 f = np.load("./codes/data/mat/oo_transition_matrix.npz", mmap_mode='r', allow_pickle=True)
-inp = f["mat"][:,0,:]
+print("Input shape {}".format(f["mat"].shape))
+# print(f["c_dict"])
+inp = f["mat"]
 c_dict = f["c_dict"][0]
+n_colors = len(c_dict)
+
+print(inp.shape, c_dict)
 
 # get input indexed at even indices
 even_indices = [i for i in range(inp.shape[0]) if i % 2 == 0]
@@ -49,7 +56,7 @@ odd_indices = [i for i in range(inp.shape[0]) if i % 2 != 0]
 x_all = inp[even_indices,:]
 y_all = inp[odd_indices,:]
 
-x_all = x_all[:,1:]
+x_all = x_all[:,1:-4]
 y_all = y_all[:,1:3]
 
 for a in range(5):
@@ -72,6 +79,7 @@ for a in range(5):
         print(x.shape, y.shape)
 
 
+
         N = x.shape[0]
         x_dim = x.shape[1]
         y_dim = y.shape[1]
@@ -88,18 +96,21 @@ for a in range(5):
         if args.model == "linear":
             linear_flag = True
 
-        model = RelationalNN(x_dim, h_dim, y_dim, c_dict, linear_flag = linear_flag, sparse = args.sparse)
+        model = RelationalNN(x_dim, h_dim, y_dim, c_dict, linear_flag = linear_flag, sparse = args.sparse, group_lasso = args.group_lasso, n_colors = n_colors, penalty = args.penalty)
         n_epochs = 200
         for i in range(n_epochs):
             model.train(i, xtr, ytr)
             model.test(i, xte, yte)
 
-        torch.save(model.state_dict(), current_dir + "saved_models/model_" + args.model + "_" + actions[a] + "_sparse_" + str(args.sparse))
+        suffix = args.model + "_" + actions[a] + "_sparse_" + str(args.sparse) + "_gl_" + str(args.group_lasso) + "_p_" + str(args.penalty)
+        model_name = current_dir + "saved_models/models/model_" + suffix
+        torch.save(model.state_dict(), model_name)
 
     #load model
     if args.mode in ["both", "eval"]:
-        eval_model = RelationalNN(x_dim, h_dim, y_dim, c_dict, linear_flag = linear_flag, sparse = args.sparse)
-        eval_model.load_state_dict(torch.load(current_dir + "saved_models/model_" + args.model + "_" + actions[a] + "_sparse_" + str(args.sparse)))
+        ridx = np.random.choice(x.shape[0])
+        eval_model = RelationalNN(x_dim, h_dim, y_dim, c_dict, linear_flag = linear_flag, sparse = args.sparse, group_lasso = args.group_lasso, n_colors = n_colors, penalty = args.penalty)
+        eval_model.load_state_dict(torch.load(model_name))
 
         x_eval = torch.from_numpy(x).type(torch.FloatTensor)
         y_eval = torch.from_numpy(y).type(torch.FloatTensor)
@@ -107,8 +118,8 @@ for a in range(5):
         y_pred = eval_model.forward(x_eval)
         eval_loss = eval_model.loss(y_pred, y_eval)
         model.logger.info("Loss on entire data {}".format(eval_loss.item()))
-        print(x[:1], y[:1], y_pred[:1])
-        print(analyze(x[:1], c_dict), y[:1], y_pred[:1])
+        print(x[ridx - 1:ridx], y[ridx - 1:ridx], y_pred[ridx - 1:ridx])
+        print(analyze(x[ridx - 1:ridx], c_dict), y[ridx -1:ridx], y_pred[ridx -1 :ridx])
         print(model.fcl.weight)
-        plot_name = "model_" + args.model + "_" + actions[a] + "_sparse_" + str(args.sparse)
+        plot_name = current_dir + "saved_models/plots/plot_" + suffix + ".png"
         plot_weight(model.fcl.weight.detach().numpy(), plot_name, dir = current_dir + "saved_models/")
