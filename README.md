@@ -9,4 +9,4 @@ Repo containing code for running experiments related to causal transfer learning
 PYTHONPATH=$PWD python codes/data/analyze_data.py
 
 # To run the model, use following command.
-PYTHONPATH=$PWD python codes/models/relation_learning/abstract_relation_reasoning.py --model linear --sparse 1 --group_lasso 0 --mode both --action all --penalty 1
+PYTHONPATH=$PWD python codes/models/relation_learning/abstract_relation_reasoning.py --model linear --sparse 0 --group_lasso 1 --mode both --action up --penalty 1

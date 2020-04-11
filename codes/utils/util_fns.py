@@ -8,6 +8,24 @@ actions = {
 3: "right"
 }
 
+def discretize(inp, colors_dict):
+    n_colors = len(colors_dict)
+    if not isinstance(inp, np.ndarray):
+        inp = inp.detach().numpy()
+    result = np.zeros((inp.shape[0], 16))
+    for i in range(len(inp)):
+        idx = 0
+        count = 0
+        for j in range(5):
+            result[i, count] = inp[i, idx]
+            result[i, count + 1] = inp[i, idx + 1]
+            color_ohe = decode_onehot(inp[i,idx + 2: idx + 2 + n_colors])
+            result[i, count + 2] = color_ohe
+            idx = idx + n_colors + 2
+            count = count + 3
+        result[i, -1] = decode_onehot(inp[i, -4:])
+    return result
+
 def analyze(inp, colors_dict):
     n_colors = len(colors_dict)
     if not isinstance(inp, np.ndarray):

@@ -63,9 +63,9 @@ class RelationalNN(nn.Module):
                         # group_lasso_loss +=  abs(p[k, idx + 0])
                         # group_lasso_loss +=  abs(p[k, idx + 1])
                         # # print(p[k, idx + 2: idx + 2+ self.n_colors])
-                        group_lasso_loss +=  math.sqrt(1) * torch.norm(p[k,idx: idx + 2 + self.n_colors], p = 2, dim = 0)
+                        group_lasso_loss +=  math.sqrt(5) * torch.norm(p[k,idx: idx + 2 + self.n_colors], p = 2, dim = 0)
                         idx = idx + 2 + self.n_colors
-                    group_lasso_loss += math.sqrt(1)* torch.norm(p[k,-4:], p = 2, dim = 0)
+                    # group_lasso_loss += math.sqrt(1)* torch.norm(p[k,-4:], p = 2, dim = 0)
 
         if self.sparse == 1:
             for param in self.parameters():
