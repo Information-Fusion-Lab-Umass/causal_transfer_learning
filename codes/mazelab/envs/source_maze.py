@@ -17,5 +17,5 @@ class SourceMaze(BaseMaze):
         obstacle = Object('obstacle', 1, color.obstacle, "black", True, np.stack(np.where(self.x == 1), axis = 1))
         switch = Object('switch', 2, color.switch, "green", True, np.stack(np.where(self.x == 2), axis = 1))
         prize = Object('prize', 3, color.prize, "red", True, np.stack(np.where(self.x == 3), axis = 1))
-        agent = Object('agent', 4, color.agent, "yellow", False, [])
+        agent = Object('agent', 4, color.agent, "yellow", False, np.stack(np.where(self.x == 4), axis = 1))
         return free, obstacle, switch, prize, agent
