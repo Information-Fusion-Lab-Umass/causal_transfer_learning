@@ -8,6 +8,16 @@ actions = {
 3: "right"
 }
 
+def append_cons_ts(data):
+    m,n = data.shape
+    m_hat, n_hat = int(m/2), 2*n
+    result = np.zeros((m_hat, n_hat))
+    for i in range(m_hat):
+        result[i,:n] = data[2*i,:]
+        result[i,n:n_hat] = data[2*i+1,:]
+
+    return result
+
 def discretize(inp, colors_dict):
     n_colors = len(colors_dict)
     if not isinstance(inp, np.ndarray):
@@ -17,13 +27,13 @@ def discretize(inp, colors_dict):
         idx = 0
         count = 0
         for j in range(5):
-            result[i, count] = inp[i, idx]
-            result[i, count + 1] = inp[i, idx + 1]
+            result[i, count] = inp[i, idx] + 1
+            result[i, count + 1] = inp[i, idx + 1] + 1
             color_ohe = decode_onehot(inp[i,idx + 2: idx + 2 + n_colors])
-            result[i, count + 2] = color_ohe
+            result[i, count + 2] = color_ohe + 1
             idx = idx + n_colors + 2
             count = count + 3
-        result[i, -1] = decode_onehot(inp[i, -4:])
+        result[i, -1] = decode_onehot(inp[i, -4:]) + 1
     return result
 
 def analyze(inp, colors_dict):
@@ -35,7 +45,7 @@ def analyze(inp, colors_dict):
         idx = 0
         count = 0
         for j in range(5):
-            result[i, count] = inp[i, idx]
+            result[i, count] = inp[i, idx] + 1
             result[i, count + 1] = inp[i, idx + 1]
             color_ohe = decode_onehot(inp[i,idx + 2: idx + 2 + n_colors])
             result[i, count + 2] = colors_dict[color_ohe]

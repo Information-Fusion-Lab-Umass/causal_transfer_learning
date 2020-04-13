@@ -22,6 +22,8 @@ def main():
     switch_positions = []
     prize_positions = []
     x = basic_maze(args.width, args.height, switch_positions, prize_positions, args.random_obstacles)
+    print(x.shape)
+    print(x)
     start_idx = [[7, 2]]
     env_id = 'SourceMaze-v0'
 
@@ -54,7 +56,7 @@ def main():
                 colors = np.unique(np.array(colors))
                 n_colors = len(colors)
 
-            # env.render()
+            env.render()
             # time.sleep(0.1)
             action = j
             X, colors_dict = get_oo_repr(count, curr_objects, action, n_colors, n_actions)
