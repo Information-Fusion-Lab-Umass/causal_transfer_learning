@@ -24,7 +24,7 @@ def simulate_sem(W, X, Z):
         output = Z
     return output
 
-def generate_structure(height, n_data):
+def generate_structure(height, n_data, action):
     vars = ['bias', 'ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
              'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1',
              'ax_t2', 'ay_t2']
@@ -52,7 +52,19 @@ def generate_structure(height, n_data):
     # agent's y position at t2
     edges[('ay_t1', 'ay_t2')] = 1
     w[('ay_t1', 'ay_t2')] = 1
-    w[('lc_t1', 'ay_t2')] = -1
+
+    if actions[action] == "up":
+        w[('uc_t1', 'ax_t2')] = -1
+
+    if actions[action] == "down":
+        w[('dc_t1', 'ax_t2')] = 1
+
+    if actions[action] == "left":
+        w[('lc_t1', 'ay_t2')] = -1
+
+    if actions[action] == "right":
+        w[('rc_t1', 'ay_t2')] = 1
+
 
     # upper neighbor's x position
     edges[('ax_t1', 'ux_t1')] = 1
@@ -132,7 +144,7 @@ def generate_structure(height, n_data):
         result = np.squeeze(result, axis = 1)
         X[:,j] = result
 
-
+    X_all = np.load("./codes/data/mat/SEM/oo_s_form_{}.npz".format(action), mmap_mode='r', allow_pickle=True)["mat"]
     # maze = np.zeros((M, height+1, height+1))
     # for i in range(M):
     #     maze[i, X[i,1], X[i,2]] = X[i,3]
@@ -141,6 +153,4 @@ def generate_structure(height, n_data):
     #     maze[i, X[i,10], X[i,11]] = abs(X[i,12] - 1)
     #     maze[i, X[i,13], X[i,14]] = abs(X[i,15] - 1)
     #     start_idx = [[X[i,1], X[i,2]]]
-    return X, W_true
-
-# Test no tears.
+    return X, W_true, X_all, Z
