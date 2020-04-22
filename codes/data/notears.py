@@ -2,7 +2,7 @@ import scipy.optimize as sopt
 import numpy as np
 
 # Compute score function and augmented penalty/sparsity loss
-def notears_linear(X, Z, lambda1, loss_type, max_iter=100, h_tol=1e-8, rho_max=1e+16, w_threshold=0.3):
+def notears_linear(X, Z, lambda1, loss_type, rho = 1.0, max_iter=100, h_tol=1e-8, rho_max=1e+16, w_threshold=0.3):
     """Solve min_W L(W; X) + lambda1 ‖W‖_1 s.t. h(W) = 0 using augmented Lagrangian.
 
     Args:
