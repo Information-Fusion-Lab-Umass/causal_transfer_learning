@@ -4,6 +4,7 @@ import argparse
 import igraph as ig
 import matplotlib.pyplot as plt
 from codes.utils import plot_weight_sem
+import os
 
 actions = {
 0: "up",
@@ -11,7 +12,10 @@ actions = {
 2: "left",
 3: "right",
 }
-plot_dir = "./codes/data/mat/SEM/plots/"
+plot_dir = "./codes/data/mat/SEM/plots/final/"
+if not os.path.exists(plot_dir):
+    os.makedirs(plot_dir)
+
 parser = argparse.ArgumentParser("Arguments for environment generation for causal concept understanding")
 parser.add_argument('--height', default= 10, type = int, help='height of the grid')
 parser.add_argument('--n_data', default= 100, type = int, help='number of examples')
@@ -23,7 +27,7 @@ vars = ['bias', 'ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
          'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1',
          'ax_t2', 'ay_t2']
 
-def plot_graph(W):
+def plot_graph(W, action, type):
     abs_w = abs(W) > 0
     g = ig.Graph().Adjacency(abs_w.tolist())
     g.es['weight'] = W[W.nonzero()]
@@ -37,11 +41,12 @@ def plot_graph(W):
     visual_style["margin"] = 20
 
     # visual_style["layout"] = layout
-    ig.plot(g, **visual_style)
+    out = ig.plot(g, plot_dir + "W_{}_{}.pdf".format(action, type), **visual_style)
+    # out.save()
 
-for i in range(1):
+for i in range(4):
     X, W_true, X_all, Z = generate_structure(args.height, args.n_data, i)
-    plot_graph(W_true)
+    plot_graph(W_true, actions[i], "true")
     X_all = X_all.astype("int")
     idx = np.random.shuffle(np.arange(X_all.shape[0]))
     X_train = np.squeeze(X_all[idx], axis = 0)
@@ -66,7 +71,7 @@ for i in range(1):
     else:
         W_est = np.load('./codes/data/mat/SEM/csv/W_est_{}.npz'.format(actions[i]))["w"]
 
-    plot_graph(W_est)
+    plot_graph(W_est, actions[i], "est")
     true_plot_name = plot_dir + "w_true_{}".format(actions[i])
     est_plot_name = plot_dir + "w_est_{}".format(actions[i])
 

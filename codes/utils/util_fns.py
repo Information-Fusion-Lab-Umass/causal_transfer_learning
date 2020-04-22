@@ -166,7 +166,7 @@ def plot_weight_sem(w, plot_name, x_indices, y_indices, x_label, y_label):
         for j in range(m):
             W[i,j] = w[y_indices[i], x_indices[j]]
 
-    fig, ax = plt.subplots(figsize=(8,9))
+    fig, ax = plt.subplots(figsize=(9,9))
 
     ax.matshow(abs(W), cmap=plt.cm.Blues)
     ax.tick_params(axis="x", bottom=True, rotation = (45), top=False, labelbottom=True, labeltop=False, pad = 20)
