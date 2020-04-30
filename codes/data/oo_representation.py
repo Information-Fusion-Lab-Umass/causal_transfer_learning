@@ -23,11 +23,16 @@ def get_neighboring_objects(X, action_ohe):
 
                     if x_diff == 1 and y_diff == 0:
                         u = X[j,idx+1:]
-            features.append(u)
-            features.append(d)
-            features.append(l)
-            features.append(r)
-            features.append(action_ohe)
+
+            try:
+                features.append(u)
+                features.append(d)
+                features.append(l)
+                features.append(r)
+                features.append(action_ohe)
+            except Exception as e:
+                 print(e)
+                 print(i, X[i], X)
 
             flat_list = []
             for sublist in features:
@@ -43,6 +48,7 @@ def get_oo_repr(t, objects, action, n_colors, n_actions):
         for p1, p2 in o.positions:
                 A.append([o.colorname, p1, p2])
 
+    # print(" Time {} OO Objects {}".format(t, objects))
     A = np.asarray(A)
     colors = A[:,0]
     uniq_colors, colors_int = np.unique(colors, return_inverse=True)

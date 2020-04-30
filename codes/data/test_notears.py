@@ -12,20 +12,27 @@ actions = {
 2: "left",
 3: "right",
 }
-plot_dir = "./codes/data/mat/SEM/plots/final/"
-if not os.path.exists(plot_dir):
-    os.makedirs(plot_dir)
+
 
 parser = argparse.ArgumentParser("Arguments for environment generation for causal concept understanding")
-parser.add_argument('--height', default= 10, type = int, help='height of the grid')
-parser.add_argument('--n_data', default= 100, type = int, help='number of examples')
+
+parser.add_argument('--height', default = 10, type = int, help='Height of the environment')
+parser.add_argument('--n_data', default = 100, type = int, help='Number of data points')
+parser.add_argument('--rho', default = 1.0, type = float, help='Hyperparameter for acyclic constraint')
+parser.add_argument('--alpha', default = 0.0, type = float, help='Hyperparameter for penalty of acyclic constraint')
+parser.add_argument('--l', default = 0.0, type = float, help='Hyperparameter for l1 loss')
 parser.add_argument('--mode', default = "eval", choices = ['train', 'eval', 'both'], help ='', required = True)
+parser.add_argument('--disp', default = False, help = 'True or False', required = True)
 
 args = parser.parse_args()
 
 vars = ['bias', 'ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
          'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1',
          'ax_t2', 'ay_t2']
+
+plot_dir = "./codes/plots/lam_{}_rho_{}_alpha_{}/".format(args.l, args.rho, args.alpha)
+if not os.path.exists(plot_dir):
+    os.makedirs(plot_dir)
 
 def plot_graph(W, action, type):
     abs_w = abs(W) > 0
@@ -63,13 +70,12 @@ for i in range(4):
     # M = M.astype(int)
     # R = X_train - M
     # loss = 0.5 / X.shape[0] * (R ** 2).sum()
-
     if args.mode in ["train", "both"]:
-        W_est = notears_linear(X_train, Z, lambda1=0.1, loss_type='l2')
-        np.savez('./codes/data/mat/SEM/csv/W_est_{}.npz'.format(actions[i]), w = W_est)
-        np.savez('./codes/data/mat/SEM/csv/W_true_{}.npz'.format(actions[i]), w = W_true)
+        W_est = notears_linear(X_train, Z, lambda1 = args.l, rho = args.rho, alpha = args.alpha, disp = args.disp)
+        np.savez('./codes/data/mat/SEM/W_est_{}.npz'.format(actions[i]), w = W_est)
+        np.savez('./codes/data/mat/SEM/W_true_{}.npz'.format(actions[i]), w = W_true)
     else:
-        W_est = np.load('./codes/data/mat/SEM/csv/W_est_{}.npz'.format(actions[i]))["w"]
+        W_est = np.load('./codes/data/mat/SEM/W_est_{}.npz'.format(actions[i]))["w"]
 
     plot_graph(W_est, actions[i], "est")
     true_plot_name = plot_dir + "w_true_{}".format(actions[i])

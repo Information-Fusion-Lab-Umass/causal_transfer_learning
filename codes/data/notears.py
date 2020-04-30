@@ -2,7 +2,7 @@ import scipy.optimize as sopt
 import numpy as np
 
 # Compute score function and augmented penalty/sparsity loss
-def notears_linear(X, Z, lambda1, loss_type, rho = 1.0, max_iter=100, h_tol=1e-8, rho_max=1e+16, w_threshold=0.3):
+def notears_linear(X, Z, loss_type = 'l2', lambda1 = 0.1, rho = 1.0, alpha = 0.0, max_iter=100, h_tol=1e-8, rho_max=1e+16, w_threshold=0.3, disp = False):
     """Solve min_W L(W; X) + lambda1 ‖W‖_1 s.t. h(W) = 0 using augmented Lagrangian.
 
     Args:
@@ -51,12 +51,17 @@ def notears_linear(X, Z, lambda1, loss_type, rho = 1.0, max_iter=100, h_tol=1e-8
         return obj, g_obj
 
     n, d = X.shape
-    w_est, rho, alpha, h = np.zeros(2 * d * d), 1.0, 0.0, np.inf  # double w_est into (w_pos, w_neg)
+    w_est, h = np.zeros(2 * d * d), np.inf  # double w_est into (w_pos, w_neg)
     bnds = [(0, 0) if i == j else (0, None) for _ in range(2) for i in range(d) for j in range(d)]
     for _ in range(max_iter):
         w_new, h_new = None, None
         while rho < rho_max:
-            sol = sopt.minimize(_func, w_est, method='L-BFGS-B', jac=True, bounds=bnds)
+            if disp == "True":
+                options = {'disp' : True}
+
+            if disp == "False":
+                options = {'disp' : False}
+            sol = sopt.minimize(_func, w_est, method='L-BFGS-B', jac=True, bounds=bnds, options = options)
             w_new = sol.x
             h_new, _ = _h(_adj(w_new))
             if h_new > 0.25 * h:
