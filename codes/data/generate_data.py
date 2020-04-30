@@ -39,13 +39,16 @@ def main():
     n_actions = env.action_space.n
     epsilon = 1.0
     empty_positions = env.maze.objects.free.positions
+    switch_positions = env.maze.objects.switch.positions
+    prize_positions = env.maze.objects.prize.positions
+    initial_positions = {"free": empty_positions, "switch": switch_positions, "prize": prize_positions}
     count = 0
     inp = None
     colors = []
     n_pos = len(empty_positions)
     for p in empty_positions:
         start_idx = [p]
-        env = gym.make(env_id, x = x, start_idx = start_idx, free_positions = empty_positions, invert = invert)
+        env = gym.make(env_id, x = x, start_idx = start_idx, initial_positions = initial_positions, invert = invert)
         for j in range(n_actions):
             curr_obs = env.reset()
             curr_objects = env.maze.objects
@@ -56,7 +59,7 @@ def main():
                 colors = np.unique(np.array(colors))
                 n_colors = len(colors)
 
-            env.render()
+            # env.render()
             # time.sleep(0.1)
             action = j
             X, colors_dict = get_oo_repr(count, curr_objects, action, n_colors, n_actions)
@@ -70,6 +73,7 @@ def main():
             next_objects = env.maze.objects
             # rewards
             # env.render()
+            # time.sleep(0.1)
             X, colors_dict = get_oo_repr(count, next_objects, action, n_colors, n_actions)
             inp[count, :, :] = X
             count = count + 1

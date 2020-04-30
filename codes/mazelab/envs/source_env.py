@@ -61,8 +61,10 @@ class SourceEnv(BaseEnv):
 
     def reset(self):
         self.maze.objects.agent.positions = self.start_idx
-        a = self.free_positions
-        self.maze.objects.free.positions = [ x for x in a if not (x[0] == self.start_idx[0][0] and x[1] == self.start_idx[0][1])]
+        self.maze.objects.free.positions = [ x for x in self.initial_positions["free"] if not (x[0] == self.start_idx[0][0] and x[1] == self.start_idx[0][1])]
+        # self.maze.objects.free.positions = self.initial_positions["free"]
+        self.maze.objects.switch.positions = self.initial_positions["switch"]
+        self.maze.objects.prize.positions = self.initial_positions["prize"]
         return self.maze.to_value()
 
     def _is_valid(self, position):
@@ -76,8 +78,8 @@ class SourceEnv(BaseEnv):
         for pos in self.maze.objects.switch.positions:
             if new_position[0] == pos[0] and new_position[1] == pos[1]:
                 out = True
-                # self.maze.x[pos[0],pos[1]] = self.maze.objects.free.value
-                # self.maze.reset_maze(curr_position)
+                self.maze.x[pos[0],pos[1]] = self.maze.objects.free.value
+                self.maze.reset_maze(curr_position)
                 break
         return out
 
@@ -87,9 +89,10 @@ class SourceEnv(BaseEnv):
         for pos in self.maze.objects.prize.positions:
             if new_position[0] == pos[0] and new_position[1] == pos[1]:
                 out = True
-                # if self._is_activated():
-                    # self.maze.x[pos[0],pos[1]] = self.maze.objects.free.value
-                    # self.maze.reset_maze(curr_position)
+                if self._is_activated():
+                    self.maze.x[pos[0],pos[1]] = self.maze.objects.free.value
+                    self.maze.reset_maze(curr_position)
+                    self.free_positions.append([pos[0],pos[1]])
                 break
         return out
 
