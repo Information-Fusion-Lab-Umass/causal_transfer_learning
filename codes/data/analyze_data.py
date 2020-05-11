@@ -1,6 +1,7 @@
 import numpy as np
 from codes.utils import analyze, discretize, append_cons_ts, structural_form
 import argparse
+import os
 
 
 parser = argparse.ArgumentParser("Arguments for analyzing the environment for causal concept understanding")
@@ -10,6 +11,10 @@ parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger"], 
 args = parser.parse_args()
 
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
+
+if not os.path.exists(data_dir):
+    os.makedirs(data_dir)
+
 all_data = None
 sum = 0
 

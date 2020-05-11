@@ -5,16 +5,20 @@ from mazelab.envs import SourceEnv
 import time
 import numpy as np
 from oo_representation import *
+import os
 parser = argparse.ArgumentParser("Arguments for environment generation for causal concept understanding")
 
 parser.add_argument('--env', default="source", help='type of environment')
 parser.add_argument('--random_obstacles', default= 0, type = int, help='flag to generate random obstacles')
 parser.add_argument('--width', default= 10, type = int, help='width of the grid')
 parser.add_argument('--height', default= 10, type = int, help='height of the grid')
-parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger"], help = "Type of game")
+parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger", "ow"], help = "Type of game")
 args = parser.parse_args()
 
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
+
+if not os.path.exists(data_dir):
+    os.makedirs(data_dir)
 def main():
     # switch_positions = [[2,2], [4,6]]
     # prize_positions = [[7,6],[5,5]]

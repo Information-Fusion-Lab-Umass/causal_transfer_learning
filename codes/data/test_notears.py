@@ -34,6 +34,9 @@ vars = ['bias', 'ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
 plot_dir = "./codes/plots/{}/lam_{}_rho_{}_alpha_{}/".format(args.game_type, args.l, args.rho, args.alpha)
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
 
+if not os.path.exists(data_dir):
+    os.makedirs(data_dir)
+
 if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
 
