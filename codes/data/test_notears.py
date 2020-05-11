@@ -23,7 +23,7 @@ parser.add_argument('--alpha', default = 0.0, type = float, help='Hyperparameter
 parser.add_argument('--l', default = 0.0, type = float, help='Hyperparameter for l1 loss')
 parser.add_argument('--mode', default = "eval", choices = ['train', 'eval', 'both'], help ='Train or Evaluate')
 parser.add_argument('--disp', default = False, help = 'True or False')
-parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger"], help = "Type of game")
+parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger", "all_random"], help = "Type of game", required = True)
 
 args = parser.parse_args()
 
