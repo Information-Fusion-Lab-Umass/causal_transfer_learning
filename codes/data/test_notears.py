@@ -21,8 +21,9 @@ parser.add_argument('--n_data', default = 100, type = int, help='Number of data 
 parser.add_argument('--rho', default = 1.0, type = float, help='Hyperparameter for acyclic constraint')
 parser.add_argument('--alpha', default = 0.0, type = float, help='Hyperparameter for penalty of acyclic constraint')
 parser.add_argument('--l', default = 0.0, type = float, help='Hyperparameter for l1 loss')
-parser.add_argument('--mode', default = "eval", choices = ['train', 'eval', 'both'], help ='', required = True)
-parser.add_argument('--disp', default = False, help = 'True or False', required = True)
+parser.add_argument('--mode', default = "eval", choices = ['train', 'eval', 'both'], help ='Train or Evaluate')
+parser.add_argument('--disp', default = False, help = 'True or False')
+parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger"], help = "Type of game")
 
 args = parser.parse_args()
 
@@ -30,7 +31,9 @@ vars = ['bias', 'ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
          'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1',
          'ax_t2', 'ay_t2']
 
-plot_dir = "./codes/plots/lam_{}_rho_{}_alpha_{}/".format(args.l, args.rho, args.alpha)
+plot_dir = "./codes/plots/{}/lam_{}_rho_{}_alpha_{}/".format(args.game_type, args.l, args.rho, args.alpha)
+data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
+
 if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
 
@@ -52,9 +55,14 @@ def plot_graph(W, action, type):
     # out.save()
 
 for i in range(4):
-    X, W_true, X_all, Z = generate_structure(args.height, args.n_data, i)
+    X, W_true, Z = generate_structure(args.height, args.n_data, i)
     plot_graph(W_true, actions[i], "true")
+    filename = data_dir + "oo_action_{}_{}.npz".format(i, args.game_type)
+    f = np.load(filename, mmap_mode='r', allow_pickle=True)
+    X_all = f["mat"]
+    c_dict = f["c_dict"]
     X_all = X_all.astype("int")
+    print(actions[i], X_all[:4], c_dict)
     idx = np.random.shuffle(np.arange(X_all.shape[0]))
     X_train = np.squeeze(X_all[idx], axis = 0)
 
@@ -72,10 +80,10 @@ for i in range(4):
     # loss = 0.5 / X.shape[0] * (R ** 2).sum()
     if args.mode in ["train", "both"]:
         W_est = notears_linear(X_train, Z, lambda1 = args.l, rho = args.rho, alpha = args.alpha, disp = args.disp)
-        np.savez('./codes/data/mat/SEM/W_est_{}.npz'.format(actions[i]), w = W_est)
-        np.savez('./codes/data/mat/SEM/W_true_{}.npz'.format(actions[i]), w = W_true)
+        np.savez(data_dir + 'W_est_{}.npz'.format(actions[i]), w = W_est)
+        np.savez(data_dir + 'W_true_{}.npz'.format(actions[i]), w = W_true)
     else:
-        W_est = np.load('./codes/data/mat/SEM/W_est_{}.npz'.format(actions[i]))["w"]
+        W_est = np.load(data_dir + 'W_est_{}.npz'.format(actions[i]))["w"]
 
     plot_graph(W_est, actions[i], "est")
     true_plot_name = plot_dir + "w_true_{}".format(actions[i])

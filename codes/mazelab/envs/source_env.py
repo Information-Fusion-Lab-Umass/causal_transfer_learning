@@ -92,7 +92,6 @@ class SourceEnv(BaseEnv):
                 if self._is_activated():
                     self.maze.x[pos[0],pos[1]] = self.maze.objects.free.value
                     self.maze.reset_maze(curr_position)
-                    self.free_positions.append([pos[0],pos[1]])
                 break
         return out
 

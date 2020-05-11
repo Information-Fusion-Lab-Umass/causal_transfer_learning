@@ -144,7 +144,6 @@ def generate_structure(height, n_data, action):
         result = np.squeeze(result, axis = 1)
         X[:,j] = result
 
-    X_all = np.load("./codes/data/mat/SEM/oo_s_form_{}.npz".format(action), mmap_mode='r', allow_pickle=True)["mat"]
     # maze = np.zeros((M, height+1, height+1))
     # for i in range(M):
     #     maze[i, X[i,1], X[i,2]] = X[i,3]
@@ -153,4 +152,4 @@ def generate_structure(height, n_data, action):
     #     maze[i, X[i,10], X[i,11]] = abs(X[i,12] - 1)
     #     maze[i, X[i,13], X[i,14]] = abs(X[i,15] - 1)
     #     start_idx = [[X[i,1], X[i,2]]]
-    return X, W_true, X_all, Z
+    return X, W_true, Z
