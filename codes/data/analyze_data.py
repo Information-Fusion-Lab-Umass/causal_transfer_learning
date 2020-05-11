@@ -7,7 +7,7 @@ import os
 parser = argparse.ArgumentParser("Arguments for analyzing the environment for causal concept understanding")
 parser.add_argument("--start", type = int, required = True, help = "Starting height of environment")
 parser.add_argument("--stop", type = int, required = True, help = "Maximum height of the environment")
-parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger"], help = "Type of game")
+parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger", "all_random"], help = "Type of game", required = True)
 args = parser.parse_args()
 
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)

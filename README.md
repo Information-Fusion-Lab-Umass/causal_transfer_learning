@@ -8,6 +8,7 @@ pip install -e .
 
 # To generate data from different running environments, run following bash script
 
+Add game_type in below shell script
 ./data.sh
 
 # To generate data for single environment (height=10 and width = 10), run the following command

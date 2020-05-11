@@ -12,7 +12,9 @@ parser.add_argument('--env', default="source", help='type of environment')
 parser.add_argument('--random_obstacles', default= 0, type = int, help='flag to generate random obstacles')
 parser.add_argument('--width', default= 10, type = int, help='width of the grid')
 parser.add_argument('--height', default= 10, type = int, help='height of the grid')
-parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger", "ow"], help = "Type of game")
+parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger", "all_random"], help = "Type of game", required = True)
+parser.add_argument('--render', default = 0, choices = [1, 0], help = "Type of game")
+
 args = parser.parse_args()
 
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
@@ -75,7 +77,9 @@ def main():
             next_obs, reward, done, info = env.step(action)
             next_objects = env.maze.objects
             # rewards
-            env.render()
+
+            if args.render == 1:
+                env.render()
             # time.sleep(0.1)
             X, colors_dict = get_oo_repr(count, next_objects, action, n_colors, n_actions)
             inp[count, :, :] = X
