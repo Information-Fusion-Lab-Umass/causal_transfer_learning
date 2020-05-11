@@ -1,13 +1,23 @@
 import numpy as np
 from codes.utils import analyze, discretize, append_cons_ts, structural_form
-current_dir = "./codes/data/"
+import argparse
+
+
+parser = argparse.ArgumentParser("Arguments for analyzing the environment for causal concept understanding")
+parser.add_argument("--start", type = int, required = True, help = "Starting height of environment")
+parser.add_argument("--stop", type = int, required = True, help = "Maximum height of the environment")
+parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger"], help = "Type of game")
+args = parser.parse_args()
+
+data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
 all_data = None
 sum = 0
 
 # def all_discrete(data):
 values = []
-for i in range(5,105, 5):
-    f = np.load("./codes/data/mat/oo_transition_matrix_{}.npz".format(i), mmap_mode='r', allow_pickle=True)
+for i in range(args.start, args.stop, 5):
+    filename = data_dir + "oo_transition_matrix_{}.npz".format(i)
+    f = np.load(filename, mmap_mode='r', allow_pickle=True)
     inp = f["mat"][:,0,:]
     c_dict = f["c_dict"][0]
     sum = sum + inp.shape[0]
@@ -27,9 +37,9 @@ names = ['bias', 'ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
 
 for i in range(4):
     s_form = structural_form(discrete, action = i)
-    print(s_form.shape)
-    np.savetxt(current_dir + "mat/R/oo_s_form_{}.csv".format(i), s_form[:20], delimiter = ",")
-    np.savez(current_dir + "mat/SEM/oo_s_form_{}.npz".format(i), mat = s_form, c_dict = [c_dict])
+    print(discrete.shape, s_form.shape)
+    # np.savetxt(current_dir + "mat/R/oo_s_form_{}.csv".format(i), s_form[:20], delimiter = ",")
+    np.savez(data_dir + "oo_action_{}_{}.npz".format(i, args.game_type), mat = s_form, c_dict = [c_dict])
 
 # names = ['ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
 # 'dy_t1', 'dc_t1', 'rx_t1', 'ry_t1', 'rc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'a_t1',

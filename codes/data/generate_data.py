@@ -5,17 +5,16 @@ from mazelab.envs import SourceEnv
 import time
 import numpy as np
 from oo_representation import *
-current_dir = "./codes/data/"
-
 parser = argparse.ArgumentParser("Arguments for environment generation for causal concept understanding")
 
 parser.add_argument('--env', default="source", help='type of environment')
 parser.add_argument('--random_obstacles', default= 0, type = int, help='flag to generate random obstacles')
 parser.add_argument('--width', default= 10, type = int, help='width of the grid')
 parser.add_argument('--height', default= 10, type = int, help='height of the grid')
-
+parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger"], help = "Type of game")
 args = parser.parse_args()
 
+data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
 def main():
     # switch_positions = [[2,2], [4,6]]
     # prize_positions = [[7,6],[5,5]]
@@ -72,7 +71,7 @@ def main():
             next_obs, reward, done, info = env.step(action)
             next_objects = env.maze.objects
             # rewards
-            # env.render()
+            env.render()
             # time.sleep(0.1)
             X, colors_dict = get_oo_repr(count, next_objects, action, n_colors, n_actions)
             inp[count, :, :] = X
@@ -80,7 +79,7 @@ def main():
             if done:
                 break
         env.close()
-    np.savez(current_dir + "mat/oo_transition_matrix_{}.npz".format(args.height), mat = inp, c_dict = [colors_dict])
+    np.savez(data_dir + "oo_transition_matrix_{}.npz".format(args.height), mat = inp, c_dict = [colors_dict])
 
 if __name__ == "__main__":
     main()

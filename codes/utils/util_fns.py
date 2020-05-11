@@ -20,10 +20,11 @@ def append_cons_ts(data):
 
 def structural_form(data, action = -1):
     m,n = data.shape
-    print(m,n)
     m_hat, n_hat = int(m/2), (n+2)
+    print(m,n, m_hat, n_hat)
     result = np.zeros((m_hat, n_hat))
     for i in range(m_hat):
+        # bias term
         result[i,0] = 1
         result[i,1:16] = data[2*i,:15]
         result[i,16:18] = data[2*i+1,:2]
@@ -36,6 +37,7 @@ def structural_form(data, action = -1):
 
 def discretize(inp, colors_dict):
     n_colors = len(colors_dict)
+    print(colors_dict)
     if not isinstance(inp, np.ndarray):
         inp = inp.detach().numpy()
     result = np.zeros((inp.shape[0], 16))
