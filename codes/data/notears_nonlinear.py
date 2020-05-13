@@ -37,13 +37,13 @@ class NotearsMLP(nn.Module):
                     bounds.append(bound)
         return bounds
 
-    def forward(self, x):  # [n, d] -> [n, d]
+    def forward(self, x, z):  # [n, d] -> [n, d]
         x = self.fc1_pos(x) - self.fc1_neg(x)  # [n, d * m1]
         x = x.view(-1, self.dims[0], self.dims[1])  # [n, d, m1]
         for fc in self.fc2:
             x = torch.sigmoid(x)  # [n, d, m1]
             x = fc(x)  # [n, d, m2]
-        x = x.squeeze(dim=2)  # [n, d]
+        x = x.squeeze(dim=2) + z  # [n, d]
         return x
 
     def h_func(self):
@@ -89,7 +89,7 @@ def squared_loss(output, target):
     return loss
 
 
-def dual_ascent_step(model, X, lambda1, lambda2, rho, alpha, h, rho_max):
+def dual_ascent_step(model, X, Z, lambda1, lambda2, rho, alpha, h, rho_max):
     """Perform one step of dual ascent in augmented Lagrangian."""
     h_new = None
     optimizer = LBFGSBScipy(model.parameters())
@@ -97,7 +97,7 @@ def dual_ascent_step(model, X, lambda1, lambda2, rho, alpha, h, rho_max):
     while rho < rho_max:
         def closure():
             optimizer.zero_grad()
-            X_hat = model(X_torch)
+            X_hat = model(X_torch, Z)
             loss = squared_loss(X_hat, X_torch)
             h_val = model.h_func()
             penalty = 0.5 * rho * h_val * h_val + alpha * h_val
@@ -119,6 +119,7 @@ def dual_ascent_step(model, X, lambda1, lambda2, rho, alpha, h, rho_max):
 
 def notears_nonlinear(model: nn.Module,
                       X: np.ndarray,
+                      Z: np.ndarray,
                       lambda1: float = 0.,
                       lambda2: float = 0.,
                       max_iter: int = 100,
@@ -127,7 +128,7 @@ def notears_nonlinear(model: nn.Module,
                       w_threshold: float = 0.3):
     rho, alpha, h = 1.0, 0.0, np.inf
     for _ in range(max_iter):
-        rho, alpha, h = dual_ascent_step(model, X, lambda1, lambda2,
+        rho, alpha, h = dual_ascent_step(model, X, Z, lambda1, lambda2,
                                          rho, alpha, h, rho_max)
         if h <= h_tol or rho >= rho_max:
             break

@@ -15,15 +15,11 @@ actions = {
 
 
 parser = argparse.ArgumentParser("Arguments for environment generation for causal concept understanding")
-
-parser.add_argument('--height', default = 10, type = int, help='Height of the environment')
-parser.add_argument('--n_data', default = 100, type = int, help='Number of data points')
-parser.add_argument('--rho', default = 1.0, type = float, help='Hyperparameter for acyclic constraint')
-parser.add_argument('--alpha', default = 0.0, type = float, help='Hyperparameter for penalty of acyclic constraint')
-parser.add_argument('--l', default = 0.0, type = float, help='Hyperparameter for l1 loss')
 parser.add_argument('--mode', default = "eval", choices = ['train', 'eval', 'both'], help ='Train or Evaluate')
 parser.add_argument('--disp', default = False, help = 'True or False')
 parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger", "all_random"], help = "Type of game", required = True)
+parser.add_argument('--l1', default = 0.01, type = float, help = 'lambda 1: penalty for regularizer')
+parser.add_argument('--l2', default = 0.01, type = float, help = 'lambda2: penalty for regularizer')
 
 args = parser.parse_args()
 
@@ -31,7 +27,7 @@ vars = ['bias', 'ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
          'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1',
          'ax_t2', 'ay_t2']
 
-plot_dir = "./codes/plots/{}/lam_{}_rho_{}_alpha_{}/".format(args.game_type, args.l, args.rho, args.alpha)
+plot_dir = "./codes/plots/{}/lambda1_{}_lambda2_{}".format(args.game_type, args.l1, args.l2)
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
 
 if not os.path.exists(data_dir):
@@ -80,7 +76,7 @@ for i in range(4):
 
     model = NotearsMLP(dims=[X_train.shape[1], 10, 1], bias=True)
     if args.mode in ["train", "both"]:
-        W_est = notears_nonlinear(model, X, lambda1=0.01, lambda2=0.01)
+        W_est = notears_nonlinear(model, X, Z, lambda1=0.01, lambda2=0.01)
         # W_est = notears_linear(X_train, Z, lambda1 = args.l, rho = args.rho, alpha = args.alpha, disp = args.disp)
         np.savez(data_dir + 'W_est_{}.npz'.format(actions[i]), w = W_est)
         np.savez(data_dir + 'W_true_{}.npz'.format(actions[i]), w = W_true)
