@@ -59,7 +59,7 @@ def plot_graph(W, action, type):
 
 for i in range(4):
     X, W_true, Z = generate_structure(args.height, args.n_data, i)
-    plot_graph(W_true, actions[i], "true")
+    # plot_graph(W_true, actions[i], "true")
     filename = data_dir + "oo_action_{}_{}.npz".format(i, args.game_type)
     f = np.load(filename, mmap_mode='r', allow_pickle=True)
     X_all = f["mat"]
@@ -88,7 +88,7 @@ for i in range(4):
     else:
         W_est = np.load(data_dir + 'W_est_{}.npz'.format(actions[i]))["w"]
 
-    plot_graph(W_est, actions[i], "est")
+    # plot_graph(W_est, actions[i], "est")
     true_plot_name = plot_dir + "w_true_{}".format(actions[i])
     est_plot_name = plot_dir + "w_est_{}".format(actions[i])
 

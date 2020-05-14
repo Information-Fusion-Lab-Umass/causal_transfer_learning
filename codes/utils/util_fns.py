@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 import torch
 actions = {
@@ -168,14 +169,14 @@ def plot_weight_sem(w, plot_name, x_indices, y_indices, x_label, y_label):
         for j in range(m):
             W[i,j] = w[y_indices[i], x_indices[j]]
 
-    fig, ax = plt.subplots(figsize=(9,9))
+    fig, ax = plt.subplots()
 
     ax.matshow(abs(W), cmap=plt.cm.Blues)
     ax.tick_params(axis="x", bottom=True, rotation = (45), top=False, labelbottom=True, labeltop=False, pad = 20)
     ax.tick_params(axis="y", left = True, rotation = (45), right = False, labelleft = True, labelright = False, pad = 20)
     # We want to show all ticks...
     ax.set_xticks(np.arange(len(x_label)))
-    ax.set_yticks(np.arange(len(y_label)) - 0.5)
+    ax.set_yticks(np.arange(len(y_label)))
     # ... and label them with the respective list entries
     ax.set_xticklabels(x_label, va="center")
     ax.set_yticklabels(y_label, va="center")
@@ -192,7 +193,8 @@ def plot_weight_sem(w, plot_name, x_indices, y_indices, x_label, y_label):
             else:
                 t = ""
             text = ax.text(i, j,t ,
-                           ha="center", va="center")
+                           ha="center", va="center", color="w")
 
     ax.set_title("Weight values")
+    fig.tight_layout()
     plt.savefig(plot_name)
