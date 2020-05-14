@@ -1,4 +1,4 @@
-from from codes.data.locally_connected import LocallyConnected
+from codes.data.locally_connected import LocallyConnected
 from codes.data.lbfgsb_scipy import LBFGSBScipy
 import torch
 import torch.nn as nn
