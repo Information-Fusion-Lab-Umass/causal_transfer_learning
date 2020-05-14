@@ -22,6 +22,7 @@ parser.add_argument('--disp', default = False, help = 'True or False')
 parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger", "all_random"], help = "Type of game", required = True)
 parser.add_argument('--l1', default = 0.01, type = float, help = 'lambda 1: penalty for regularizer')
 parser.add_argument('--l2', default = 0.01, type = float, help = 'lambda2: penalty for regularizer')
+parser.add_argument('--rho', default = 0.0, type = float, help = 'rho: penalty for regularizer for acyclicity')
 
 args = parser.parse_args()
 
@@ -29,8 +30,7 @@ vars = ['bias', 'ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
          'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1',
          'ax_t2', 'ay_t2']
 
-plot_dir = "./codes/plots/{}/lambda1_{}_lambda2_{}/".format(args.game_type, args.l1, args.l2)
-print(plot_dir)
+plot_dir = "./codes/plots/{}/lambda1_{}_lambda2_{}_rho_{}/".format(args.game_type, args.l1, args.l2, args.rho)
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
 
 if not os.path.exists(data_dir):
@@ -64,7 +64,6 @@ for i in range(4):
     X_all = f["mat"]
     c_dict = f["c_dict"]
     X_all = X_all.astype("int")
-    print(actions[i], X_all[:4], c_dict)
     idx = np.random.shuffle(np.arange(X_all.shape[0]))
     X_train = np.squeeze(X_all[idx], axis = 0)
 
@@ -79,7 +78,7 @@ for i in range(4):
 
     model = NotearsMLP(dims=[X_train.shape[1], 10, 1], bias=True)
     if args.mode in ["train", "both"]:
-        W_est = notears_nonlinear(model, X, Z, lambda1=0.01, lambda2=0.01)
+        W_est = notears_nonlinear(model, X_train, Z, rho = args.rho, lambda1=args.l1, lambda2=args.l2)
         # W_est = notears_linear(X_train, Z, lambda1 = args.l, rho = args.rho, alpha = args.alpha, disp = args.disp)
         np.savez(data_dir + 'W_est_{}.npz'.format(actions[i]), w = W_est)
         np.savez(data_dir + 'W_true_{}.npz'.format(actions[i]), w = W_true)
