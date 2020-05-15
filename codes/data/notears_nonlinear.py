@@ -83,7 +83,6 @@ class NotearsMLP(nn.Module):
         W = W.cpu().detach().numpy()  # [i, j]
         return W
 
-
 class NotearsSobolev(nn.Module):
     def __init__(self, d, k):
         """d: num variables k: num expansion of each variable"""
@@ -171,7 +170,6 @@ def dual_ascent_step(model, X, Z, lambda1, lambda2, rho, alpha, h, rho_max):
             optimizer.zero_grad()
             X_hat = model(X_torch, Z_torch)
             loss = squared_loss(X_hat, X_torch)
-            print(loss)
             h_val = model.h_func()
             penalty = 0.5 * rho * h_val * h_val + alpha * h_val
             l2_reg = 0.5 * lambda2 * model.l2_reg()
@@ -181,7 +179,7 @@ def dual_ascent_step(model, X, Z, lambda1, lambda2, rho, alpha, h, rho_max):
             return primal_obj
         optimizer.step(closure)  # NOTE: updates model in-place
         with torch.no_grad():
-            print(rho, h_new, 0.25* h)
+            print("rho {}, h_new {}, 0.25h {}".format(rho, h_new, 0.25* h))
             h_new = model.h_func().item()
         if h_new > 0.25 * h:
             rho *= 10
@@ -194,6 +192,7 @@ def dual_ascent_step(model, X, Z, lambda1, lambda2, rho, alpha, h, rho_max):
 def notears_nonlinear(model: nn.Module,
                       X: np.ndarray,
                       Z: np.ndarray,
+                      model_name: str = "",
                       rho: float = 0,
                       lambda1: float = 0.,
                       lambda2: float = 0.,
@@ -205,6 +204,10 @@ def notears_nonlinear(model: nn.Module,
     for _ in range(max_iter):
         rho, alpha, h = dual_ascent_step(model, X, Z, lambda1, lambda2,
                                          rho, alpha, h, rho_max)
+        print("Iteration rho {} rho_max {} h {} h_tol {}".format(rho, rho_max, h, h_tol))
+
+        torch.save(model.state_dict(), model_name)
+
         if h <= h_tol or rho >= rho_max:
             break
     W_est = model.fc1_to_adj()
@@ -212,28 +215,28 @@ def notears_nonlinear(model: nn.Module,
     return W_est
 
 
-def main():
-    torch.set_default_dtype(torch.double)
-    np.set_printoptions(precision=3)
-
-    import notears.utils as ut
-    ut.set_random_seed(123)
-
-    n, d, s0, graph_type, sem_type = 200, 5, 9, 'ER', 'mim'
-    B_true = ut.simulate_dag(d, s0, graph_type)
-    np.savetxt('W_true.csv', B_true, delimiter=',')
-
-    X = ut.simulate_nonlinear_sem(B_true, n, sem_type)
-    print(X.shape)
-    np.savetxt('X.csv', X, delimiter=',')
-
-    model = NotearsMLP(dims=[d, 10, 1], bias=True)
-    W_est = notears_nonlinear(model, X, lambda1=0.01, lambda2=0.01)
-    assert ut.is_dag(W_est)
-    np.savetxt('W_est.csv', W_est, delimiter=',')
-    acc = ut.count_accuracy(B_true, W_est != 0)
-    print(acc)
-
-
-if __name__ == '__main__':
-    main()
+# def main():
+#     torch.set_default_dtype(torch.double)
+#     np.set_printoptions(precision=3)
+#
+#     import notears.utils as ut
+#     ut.set_random_seed(123)
+#
+#     n, d, s0, graph_type, sem_type = 200, 5, 9, 'ER', 'mim'
+#     B_true = ut.simulate_dag(d, s0, graph_type)
+#     np.savetxt('W_true.csv', B_true, delimiter=',')
+#
+#     X = ut.simulate_nonlinear_sem(B_true, n, sem_type)
+#     print(X.shape)
+#     np.savetxt('X.csv', X, delimiter=',')
+#
+#     model = NotearsMLP(dims=[d, 10, 1], bias=True)
+#     W_est = notears_nonlinear(model, X, lambda1=0.01, lambda2=0.01)
+#     assert ut.is_dag(W_est)
+#     np.savetxt('W_est.csv', W_est, delimiter=',')
+#     acc = ut.count_accuracy(B_true, W_est != 0)
+#     print(acc)
+#
+#
+# if __name__ == '__main__':
+#     main()
