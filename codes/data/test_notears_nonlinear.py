@@ -5,7 +5,9 @@ import igraph as ig
 import matplotlib.pyplot as plt
 from codes.utils import plot_weight_sem
 import os
+import torch
 
+torch.set_printoptions(precision=3, sci_mode = False)
 actions = {
 0: "up",
 1: "down",
@@ -32,12 +34,16 @@ vars = ['bias', 'ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
 
 plot_dir = "./codes/plots/{}/lambda1_{}_lambda2_{}_rho_{}/".format(args.game_type, args.l1, args.l2, args.rho)
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
+model_dir =  "./codes/data/models/{}/".format(args.game_type)
 
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
 
 if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
+
+if not os.path.exists(model_dir):
+    os.makedirs(model_dir)
 
 def plot_graph(W, action, type):
     abs_w = abs(W) > 0
@@ -77,15 +83,24 @@ for i in range(4):
     Z[:,p] = X_train[:,p]
 
     model = NotearsMLP(dims=[X_train.shape[1], 10, 1], bias=True)
+    model_name = model_dir + "{}_l1_{:.2f}_l2_{:.2f}_rho_{:.2f}".format(actions[i], args.l1, args.l2, args.rho)
     if args.mode in ["train", "both"]:
-        W_est = notears_nonlinear(model, X_train, Z, rho = args.rho, lambda1=args.l1, lambda2=args.l2)
+        W_est = notears_nonlinear(model, X_train, Z, model_name = model_name, rho = args.rho, lambda1=args.l1, lambda2=args.l2)
         # W_est = notears_linear(X_train, Z, lambda1 = args.l, rho = args.rho, alpha = args.alpha, disp = args.disp)
         np.savez(data_dir + 'W_est_{}.npz'.format(actions[i]), w = W_est)
         np.savez(data_dir + 'W_true_{}.npz'.format(actions[i]), w = W_true)
     else:
         W_est = np.load(data_dir + 'W_est_{}.npz'.format(actions[i]))["w"]
+        model.load_state_dict(torch.load(model_name))
+        with torch.no_grad():
+            X_torch = torch.from_numpy(X_train).type(torch.FloatTensor)
+            Z_torch = torch.from_numpy(Z).type(torch.FloatTensor)
+            train_pred = model(X_torch, Z_torch)
+            train_loss = squared_loss(train_pred, X_torch)
+            print("Train loss {}".format(train_loss.item()))
+            print(X_torch[:2])
+            print(train_pred[:2])
 
-    # plot_graph(W_est, actions[i], "est")
     true_plot_name = plot_dir + "w_true_{}".format(actions[i])
     est_plot_name = plot_dir + "w_est_{}".format(actions[i])
 
