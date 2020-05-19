@@ -82,7 +82,7 @@ for i in range(4):
     Z = np.zeros(X_train.shape)
     Z[:,p] = X_train[:,p]
 
-    model = NotearsMLP(dims=[X_train.shape[1], 5, 1], bias=True)
+    model = NotearsMLP(dims=[X_train.shape[1], 10, 1], bias=True)
     model_name = model_dir + "{}_l1_{:.2f}_l2_{:.2f}_rho_{:.2f}".format(actions[i], args.l1, args.l2, args.rho)
     if args.mode in ["train", "both"]:
         W_est = notears_nonlinear(model, X_train, Z, model_name = model_name, rho = args.rho, lambda1=args.l1, lambda2=args.l2)
@@ -92,19 +92,18 @@ for i in range(4):
     else:
         W_est = np.load(data_dir + 'W_est_{}.npz'.format(actions[i]))["w"]
         model.load_state_dict(torch.load(model_name))
-        with torch.no_grad():
-            X_torch = torch.from_numpy(X_train).type(torch.FloatTensor)
-            Z_torch = torch.from_numpy(Z).type(torch.FloatTensor)
-            train_pred = model(X_torch, Z_torch)
-            train_loss = squared_loss(train_pred, X_torch)
-            X_eng = analyze(X_torch[1].reshape(1,-1), c_dict)
-            W = model.fc1_to_adj()
-            print(W)
-            print(len(vars), X_eng.shape, train_pred.shape)
-            print("Train loss {}".format(train_loss.item()))
-            print("============== Action {} ==================".format(actions[i]))
-            for j in range(X_torch.shape[1]):
-                print(vars[j], X_eng[0, j], train_pred[1, j].item())
+    with torch.no_grad():
+        X_torch = torch.from_numpy(X_train).type(torch.FloatTensor)
+        Z_torch = torch.from_numpy(Z).type(torch.FloatTensor)
+        train_pred = model(X_torch, Z_torch)
+        train_loss = squared_loss(train_pred, X_torch)
+        X_eng = analyze(X_torch[1].reshape(1,-1), c_dict)
+        print(len(vars), X_eng.shape, train_pred.shape)
+        print("Train loss {}".format(train_loss.item()))
+        print("============== Action {} ==================".format(actions[i]))
+        for j in range(X_torch.shape[1]):
+            print(vars[j], X_eng[0, j], train_pred[1, j].item())
+    W = model.fc1_to_adj()
 
     true_plot_name = plot_dir + "w_true_{}".format(actions[i])
     est_plot_name = plot_dir + "w_est_{}".format(actions[i])
