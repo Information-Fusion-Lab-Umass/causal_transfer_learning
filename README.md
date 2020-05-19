@@ -21,5 +21,8 @@ PYTHONPATH=$PWD python codes/data/analyze_data.py --game_type bw --start 5 --sto
 PYTHONPATH=$PWD python codes/models/relation_learning/abstract_relation_reasoning.py --model linear --sparse 0 --group_lasso 1 --mode both --action up --penalty 1
 
 
-# To run the structure learning model, use following command.
-PYTHONPATH=$PWD python codes/data/test_notears.py --game_type bw --l 0.1 --rho 1 --alpha 0.0
+# To run the structure learning linear model, use following command.
+PYTHONPATH=$PWD python codes/data/test_notears_linear.py --game_type all_random --l 0.1 --rho 1 --alpha 0.0 --mode eval
+
+# To run the structure learning non-linear model, use following command.
+PYTHONPATH=$PWD python codes/data/test_notears_nonlinear.py --game_type all_random --l1 0.01 --l2 0.01 rho 1.0 --mode eval

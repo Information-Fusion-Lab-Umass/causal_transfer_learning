@@ -41,7 +41,7 @@ class NotearsMLP(nn.Module):
         x = self.fc1_pos(x) - self.fc1_neg(x)  # [n, d * m1]
         x = x.view(-1, self.dims[0], self.dims[1])  # [n, d, m1]
         for fc in self.fc2:
-            x = torch.sigmoid(x)  # [n, d, m1]
+            x = torch.relu(x)  # [n, d, m1]
             x = fc(x)  # [n, d, m2]
         x = x.squeeze(dim=2) + z  # [n, d]
         return x
