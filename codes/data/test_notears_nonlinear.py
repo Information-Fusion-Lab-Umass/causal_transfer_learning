@@ -3,7 +3,7 @@ from notears_nonlinear import *
 import argparse
 import igraph as ig
 import matplotlib.pyplot as plt
-from codes.utils import plot_weight_sem
+from codes.utils import *
 import os
 import torch
 
@@ -68,7 +68,7 @@ for i in range(4):
     filename = data_dir + "oo_action_{}_{}.npz".format(i, args.game_type)
     f = np.load(filename, mmap_mode='r', allow_pickle=True)
     X_all = f["mat"]
-    c_dict = f["c_dict"]
+    c_dict = f["c_dict"][0]
     X_all = X_all.astype("int")
     idx = np.random.shuffle(np.arange(X_all.shape[0]))
     X_train = np.squeeze(X_all[idx], axis = 0)
@@ -97,9 +97,12 @@ for i in range(4):
             Z_torch = torch.from_numpy(Z).type(torch.FloatTensor)
             train_pred = model(X_torch, Z_torch)
             train_loss = squared_loss(train_pred, X_torch)
+            X_eng = analyze(X_torch[:1].reshape(1,-1), c_dict)
+            print(len(vars), X_eng.shape, train_pred.shape)
             print("Train loss {}".format(train_loss.item()))
-            print(X_torch[:2])
-            print(train_pred[:2])
+            print("============== Action {} ==================".format(actions[i]))
+            for j in range(X_torch.shape[1]):
+                print(vars[j], X_eng[0, j], train_pred[0, j].item())
 
     true_plot_name = plot_dir + "w_true_{}".format(actions[i])
     est_plot_name = plot_dir + "w_est_{}".format(actions[i])

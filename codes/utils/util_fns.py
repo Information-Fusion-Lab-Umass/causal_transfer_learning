@@ -59,18 +59,20 @@ def analyze(inp, colors_dict):
     n_colors = len(colors_dict)
     if not isinstance(inp, np.ndarray):
         inp = inp.detach().numpy()
-    result = np.zeros((inp.shape[0], 16), dtype=np.dtype('a16'))
+    result = np.zeros((inp.shape[0], 18), dtype=np.dtype('a16'))
     for i in range(len(inp)):
-        idx = 0
-        count = 0
+        result[i,0] = inp[i,0]
+        idx = 1
+        count = 1
         for j in range(5):
-            result[i, count] = inp[i, idx] + 1
+            result[i, count] = inp[i, idx]
             result[i, count + 1] = inp[i, idx + 1]
-            color_ohe = decode_onehot(inp[i,idx + 2: idx + 2 + n_colors])
-            result[i, count + 2] = colors_dict[color_ohe]
-            idx = idx + n_colors + 2
+            # color_ohe = decode_onehot(inp[i,idx + 2: idx + 2 + n_colors])
+            result[i, count + 2] = colors_dict[inp[i, idx + 2]]
+            idx = idx + 3
             count = count + 3
-        # result[i, -1] = actions[decode_onehot(inp[i, -4:])]
+        result[i, count] = inp[i, idx]
+        result[i, count + 1] = inp[i, idx + 1]
     return result
 
 def decode_onehot(a):
