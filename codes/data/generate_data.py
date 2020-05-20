@@ -12,7 +12,7 @@ parser.add_argument('--env', default="source", help='type of environment')
 parser.add_argument('--random_obstacles', default= 0, type = int, help='flag to generate random obstacles')
 parser.add_argument('--width', default= 10, type = int, help='width of the grid')
 parser.add_argument('--height', default= 10, type = int, help='height of the grid')
-parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger", "all_random"], help = "Type of game", required = True)
+parser.add_argument('--game_type', default = "bw", choices = ["bw", "all_random_invert", "all_random"], help = "Type of game", required = True)
 parser.add_argument('--render', default = 0, choices = [1, 0], type = int, help = "Type of game")
 
 args = parser.parse_args()
