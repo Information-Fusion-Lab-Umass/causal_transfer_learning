@@ -27,8 +27,6 @@ def main():
     switch_positions = []
     prize_positions = []
     x = basic_maze(args.width, args.height, switch_positions, prize_positions, args.random_obstacles)
-    print(x.shape)
-    print(x)
     start_idx = [[7, 2]]
     env_id = 'SourceMaze-v0'
 
