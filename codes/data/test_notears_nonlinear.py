@@ -21,7 +21,7 @@ parser.add_argument('--height', default = 10, type = int, help='Height of the en
 parser.add_argument('--n_data', default = 100, type = int, help='Number of data points')
 parser.add_argument('--mode', default = "eval", choices = ['train', 'eval', 'both'], help ='Train or Evaluate')
 parser.add_argument('--disp', default = False, help = 'True or False')
-parser.add_argument('--game_type', default = "bw", choices = ["bw", "trigger", "all_random"], help = "Type of game", required = True)
+parser.add_argument('--game_type', default = "bw", choices = ["bw", "all_random_invert", "all_random"], help = "Type of game", required = True)
 parser.add_argument('--l1', default = 0.01, type = float, help = 'lambda 1: penalty for regularizer')
 parser.add_argument('--l2', default = 0.01, type = float, help = 'lambda2: penalty for regularizer')
 parser.add_argument('--rho', default = 0.0, type = float, help = 'rho: penalty for regularizer for acyclicity')
