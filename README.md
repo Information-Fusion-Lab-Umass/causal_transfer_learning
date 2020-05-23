@@ -26,3 +26,6 @@ PYTHONPATH=$PWD python codes/data/test_notears_linear.py --game_type all_random 
 
 # To run the structure learning non-linear model, use following command.
 PYTHONPATH=$PWD python codes/data/test_notears_nonlinear.py --game_type all_random --l1 0.01 --l2 0.01 rho 1.0 --mode eval
+
+# To run q-learning algorithm, use the following command.
+PYTHONPATH=$PWD python codes/models/rl_approaches/q_learning.py --height 10 --width 10 --render 1

@@ -8,6 +8,7 @@ import os
 import torch
 
 torch.set_printoptions(precision=3, sci_mode = False)
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 actions = {
 0: "up",
 1: "down",
@@ -25,6 +26,8 @@ parser.add_argument('--game_type', default = "bw", choices = ["bw", "all_random_
 parser.add_argument('--l1', default = 0.01, type = float, help = 'lambda 1: penalty for regularizer')
 parser.add_argument('--l2', default = 0.01, type = float, help = 'lambda2: penalty for regularizer')
 parser.add_argument('--rho', default = 0.0, type = float, help = 'rho: penalty for regularizer for acyclicity')
+parser.add_argument('--save_results', default = 1, choices = [0,1], type = int, help = 'flag to save results')
+parser.add_argument('--train_frac', default = 100, type = float, help = 'fraction of data to be trained on')
 
 args = parser.parse_args()
 
@@ -32,9 +35,9 @@ vars = ['bias', 'ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
          'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1',
          'ax_t2', 'ay_t2']
 
-plot_dir = "./codes/plots/{}/lambda1_{}_lambda2_{}_rho_{}/".format(args.game_type, args.l1, args.l2, args.rho)
+plot_dir = "./codes/plots/{}/train_{}/lambda1_{}_lambda2_{}_rho_{}/".format(args.game_type, args.train_frac, args.l1, args.l2, args.rho)
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
-model_dir =  "./codes/data/models/{}/".format(args.game_type)
+model_dir =  "./codes/data/models/{}/train_{}/".format(args.game_type, args.train_frac)
 
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
@@ -64,14 +67,18 @@ def plot_graph(W, action, type):
 
 for i in range(4):
     X, W_true, Z = generate_structure(args.height, args.n_data, i)
-    # plot_graph(W_true, actions[i], "true")
     filename = data_dir + "oo_action_{}_{}.npz".format(i, args.game_type)
     f = np.load(filename, mmap_mode='r', allow_pickle=True)
     X_all = f["mat"]
     c_dict = f["c_dict"][0]
     X_all = X_all.astype("int")
-    idx = np.random.shuffle(np.arange(X_all.shape[0]))
-    X_train = np.squeeze(X_all[idx], axis = 0)
+    train_size = int((args.train_frac/100) * X_all.shape[0])
+    print("============= Train Percentage {} Train Data {}============".format(args.train_frac, train_size))
+    idx = np.arange(X_all.shape[0])
+    np.random.shuffle(idx)
+    idx = np.random.choice(idx, size = train_size, replace = False)
+    # X_train = np.squeeze(X_all[idx], axis = 0)
+    X_train = X_all[idx]
 
     p = [0,1,2,3,6,9,12,15]
     q = []
@@ -87,11 +94,15 @@ for i in range(4):
     if args.mode in ["train", "both"]:
         W_est = notears_nonlinear(model, X_train, Z, model_name = model_name, rho = args.rho, lambda1=args.l1, lambda2=args.l2)
         # W_est = notears_linear(X_train, Z, lambda1 = args.l, rho = args.rho, alpha = args.alpha, disp = args.disp)
-        np.savez(data_dir + 'W_est_{}.npz'.format(actions[i]), w = W_est)
-        np.savez(data_dir + 'W_true_{}.npz'.format(actions[i]), w = W_true)
+
+        if args.save_results == 1:
+            np.savez(data_dir + 'W_est_{}.npz'.format(actions[i]), w = W_est)
+            np.savez(data_dir + 'W_true_{}.npz'.format(actions[i]), w = W_true)
     else:
-        W_est = np.load(data_dir + 'W_est_{}.npz'.format(actions[i]))["w"]
+        if args.save_results == 1:
+            W_est = np.load(data_dir + 'W_est_{}.npz'.format(actions[i]))["w"]
         model.load_state_dict(torch.load(model_name))
+
     with torch.no_grad():
         X_torch = torch.from_numpy(X_train).type(torch.FloatTensor)
         Z_torch = torch.from_numpy(Z).type(torch.FloatTensor)
@@ -103,14 +114,17 @@ for i in range(4):
         print("============== Action {} ==================".format(actions[i]))
         for j in range(X_torch.shape[1]):
             print(vars[j], X_eng[0, j], train_pred[1, j].item())
-    W = model.fc1_to_adj()
 
-    true_plot_name = plot_dir + "w_true_{}".format(actions[i])
-    est_plot_name = plot_dir + "w_est_{}".format(actions[i])
 
-    x_indices = q
-    y_indices = p
-    y_label = [vars[k] for k in p]
-    x_label = [vars[k] for k in q]
-    plot_weight_sem(W_true, true_plot_name, x_indices, y_indices, x_label, y_label)
-    plot_weight_sem(W, est_plot_name, x_indices, y_indices, x_label, y_label)
+    if args.save_results == 1:
+        W = model.fc1_to_adj()
+        true_plot_name = plot_dir + "w_true_{}".format(actions[i])
+        est_plot_name = plot_dir + "w_est_{}".format(actions[i])
+
+        x_indices = q
+        y_indices = p
+        y_label = [vars[k] for k in p]
+        x_label = [vars[k] for k in q]
+
+        # plot_weight_sem(W_true, true_plot_name, x_indices, y_indices, x_label, y_label)
+        plot_weight_sem(W, est_plot_name, x_indices, y_indices, x_label, y_label)
