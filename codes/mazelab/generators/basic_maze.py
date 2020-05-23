@@ -33,6 +33,14 @@ def basic_maze(width, height, switch_positions, prize_positions, random_obstacle
             req_pos = [f[i] for i in r]
             x[tuple(np.array(req_pos).T)] = c + 1
 
+    else:
+        for pos in switch_positions:
+            x[pos[0],pos[1]] = 2
+
+        for pos in prize_positions:
+            x[pos[0],pos[1]] = 3
+
+
     # f = np.argwhere(x == 0)
     # if len(switch_positions) == 0:
     #     s = np.random.choice(len(f), size = 2)
