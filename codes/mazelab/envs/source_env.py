@@ -83,7 +83,6 @@ class SourceEnv(BaseEnv):
                 break
         return out
 
-
     def _is_prize(self, curr_position, new_position):
         out = False
         for pos in self.maze.objects.prize.positions:
