@@ -42,7 +42,7 @@ class SourceEnv(BaseEnv):
             if self._is_activated():
                 reward = 1
                 self.prize_count = self.prize_count + 1
-                if self.prize_count == len(self.maze.objects.switch.positions):
+                if self.prize_count == len(self.initial_positions["prize"]):
                     done = True
             else:
                 reward = -1
