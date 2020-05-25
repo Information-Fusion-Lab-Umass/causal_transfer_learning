@@ -14,7 +14,7 @@ parser.add_argument('--width', default= 10, type = int, help='width of the grid'
 parser.add_argument('--height', default= 10, type = int, help='height of the grid')
 parser.add_argument('--game_type', default = "bw", choices = ["bw", "all_random_invert", "all_random"], help = "Type of game", required = True)
 parser.add_argument('--render', default = 0, choices = [1, 0], type = int, help = "Type of game")
-
+parser.add_argument('--mode', default = "eval", choices = ['train', 'eval', 'both'], help ='Train or Evaluate')
 args = parser.parse_args()
 
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)

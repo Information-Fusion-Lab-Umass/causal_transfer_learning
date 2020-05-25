@@ -24,7 +24,7 @@ class SourceEnv(BaseEnv):
         self.motions = BaseMotion()
         self.observation_space = Box(low = 0, high = len(self.maze.objects), shape = self.maze.size, dtype = np.uint8)
         self.action_space = Discrete(len(self.motions))
-        self.switches = 2
+        self.switches = len(self.maze.objects.switch.positions)
         self.prize_count = 0
 
     def step(self, action):
@@ -42,7 +42,7 @@ class SourceEnv(BaseEnv):
             if self._is_activated():
                 reward = 1
                 self.prize_count = self.prize_count + 1
-                if self.prize_count == 2:
+                if self.prize_count == len(self.maze.objects.switch.positions):
                     done = True
             else:
                 reward = -1
