@@ -29,3 +29,6 @@ PYTHONPATH=$PWD python codes/data/test_notears_nonlinear.py --game_type all_rand
 
 # To run q-learning algorithm, use the following command.
 PYTHONPATH=$PWD python codes/models/rl_approaches/q_learning.py --height 10 --width 10 --render 1
+
+# To run DQN algorithm, use the following command.
+PYTHONPATH=$PWD python codes/models/rl_approaches/DQN_main.py --height 10 --width 10 --render 0 --game_type trigger_non_markov --mode both
