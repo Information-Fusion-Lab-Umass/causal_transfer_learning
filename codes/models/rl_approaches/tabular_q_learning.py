@@ -35,20 +35,7 @@ def e_greedy(arr, epsilon = 0.1):
     else:
         return np.random.choice(np.arange(len(arr)))
 
-def plot_rewards(rewards):
-    n_trials, n_episodes = rewards.shape
 
-    mean = np.mean(rewards, axis = 0)
-    std = np.std(rewards, axis = 0)
-    N = np.arange(n_episodes)
-    plt.plot(N, mean)
-    plt.fill_between(N, mean - std, mean + std, color='gray', alpha=0.2)
-    # plt.plot(N, mean+std)
-    # plt.plot(np.arange(n_episodes), np.mean(rewards, axis = 0))
-    plt.title("Q-learning rewards")
-    plt.xlabel("Number of episodes")
-    plt.ylabel("Cumulative reward")
-    plt.savefig(plot_dir + "reward_plot.png")
 
 def q_learning(x, start_idx, env_id, height, width, n_trials, n_episodes, n_len,
                alpha = 0.1, gamma = 0.99, invert = False, render = False ):
@@ -100,7 +87,7 @@ def q_learning(x, start_idx, env_id, height, width, n_trials, n_episodes, n_len,
                     break
             print("Trial {} Episode {} rewards {}".format(k, i, rewards[k,i]))
             tables[k] = table
-    np.savez(plot_dir + "q_rewards_non_markov.npz", r = rewards, q =  tables)
+    np.savez(plot_dir + "q_rewards_markov.npz", r = rewards, q =  tables)
     env.close()
 
 if __name__ == '__main__':
@@ -110,7 +97,7 @@ if __name__ == '__main__':
     if args.env == "target":
         invert = True
 
-    switch_positions = [[7,7], [3,3]]
+    switch_positions = []
     prize_positions = [[8,6],[5,5]]
     x = basic_maze(width = args.width, height = args.height, switch_positions = switch_positions, prize_positions = prize_positions, random_obstacles = args.random_obstacles)
     start_idx = [[8, 1]]
@@ -121,7 +108,7 @@ if __name__ == '__main__':
         q_learning(x, start_idx, env_id, args.height, args.width, args.n_trials, args.n_episodes, args.n_len,
                        alpha = 0.1, gamma = 0.99, invert = invert, render = args.render)
     else:
-        q_rewards = np.load(plot_dir + "q_rewards_non_markov.npz")
+        q_rewards = np.load(plot_dir + "q_rewards_markov.npz")
         q_values = q_rewards["q"]
         rewards = q_rewards["r"]
         plot_rewards(rewards)

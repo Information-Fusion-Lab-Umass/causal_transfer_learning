@@ -57,7 +57,12 @@ class SourceEnv(BaseEnv):
             check =  [ x for x in a if (x[0] == curr_position[0] and x[1] == curr_position[1])]
             if len(check) == 0:
                 self.maze.objects.free.positions.append(curr_position)
-        return self.maze.to_value(), reward, done, {}
+
+        if self.return_image:
+            state = self.render(mode = 'rgb_array')
+        else:
+            state = self.maze.to_value()
+        return state, reward, done , {}
 
     def reset(self):
         self.maze.objects.agent.positions = self.start_idx
@@ -65,7 +70,10 @@ class SourceEnv(BaseEnv):
         # # self.maze.objects.free.positions = self.initial_positions["free"]
         # self.maze.objects.switch.positions = self.initial_positions["switch"]
         # self.maze.objects.prize.positions = self.initial_positions["prize"]
-        return self.maze.to_value()
+        if self.return_image:
+            return self.render(mode = 'rgb_array')
+        else:
+            return self.maze.to_value()
 
     def _is_valid(self, position):
         nonnegative = position[0] >= 0 and position[1] >= 0
