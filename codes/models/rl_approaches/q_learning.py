@@ -37,7 +37,14 @@ def e_greedy(arr, epsilon = 0.1):
 
 def plot_rewards(rewards):
     n_trials, n_episodes = rewards.shape
-    plt.plot(np.arange(n_episodes), np.mean(rewards, axis = 0))
+
+    mean = np.mean(rewards, axis = 0)
+    std = np.std(rewards, axis = 0)
+    N = np.arange(n_episodes)
+    plt.plot(N, mean)
+    plt.fill_between(N, mean - std, mean + std, color='gray', alpha=0.2)
+    # plt.plot(N, mean+std)
+    # plt.plot(np.arange(n_episodes), np.mean(rewards, axis = 0))
     plt.title("Q-learning rewards")
     plt.xlabel("Number of episodes")
     plt.ylabel("Cumulative reward")
@@ -52,8 +59,8 @@ def q_learning(x, start_idx, env_id, height, width, n_trials, n_episodes, n_len,
     prize_positions = env.maze.objects.prize.positions
     initial_positions = {"free": empty_positions, "switch": switch_positions, "prize": prize_positions}
     n_actions = env.action_space.n
-    total_len = n_len * n_episodes
-    burning = 0.1 * total_len
+    total_len = 100 * n_episodes
+    burning = 0.01 * total_len
     rewards = np.zeros((n_trials, n_episodes))
     tables = np.zeros((n_trials, height, width, n_actions))
     for k in range(n_trials):
@@ -61,7 +68,7 @@ def q_learning(x, start_idx, env_id, height, width, n_trials, n_episodes, n_len,
         table = np.zeros([height, width, n_actions], dtype = np.float32)
         epsilon = 1.0
         for i in range(n_episodes):
-            print("Epsilon for episode {}".format(epsilon))
+            print("Epsilon for episode {} age {} burning {} total_len {}".format(epsilon, age, burning, total_len))
             env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert)
             current_obs = env.reset()
             pos = np.stack(np.where(current_obs == env.maze.objects.agent.value), axis = 1)[0]
@@ -93,7 +100,7 @@ def q_learning(x, start_idx, env_id, height, width, n_trials, n_episodes, n_len,
                     break
             print("Trial {} Episode {} rewards {}".format(k, i, rewards[k,i]))
             tables[k] = table
-    np.savez(plot_dir + "q_rewards.npz", r = rewards, q =  tables)
+    np.savez(plot_dir + "q_rewards_non_markov.npz", r = rewards, q =  tables)
     env.close()
 
 if __name__ == '__main__':
@@ -103,7 +110,7 @@ if __name__ == '__main__':
     if args.env == "target":
         invert = True
 
-    switch_positions = []
+    switch_positions = [[7,7], [3,3]]
     prize_positions = [[8,6],[5,5]]
     x = basic_maze(width = args.width, height = args.height, switch_positions = switch_positions, prize_positions = prize_positions, random_obstacles = args.random_obstacles)
     start_idx = [[8, 1]]
@@ -114,7 +121,7 @@ if __name__ == '__main__':
         q_learning(x, start_idx, env_id, args.height, args.width, args.n_trials, args.n_episodes, args.n_len,
                        alpha = 0.1, gamma = 0.99, invert = invert, render = args.render)
     else:
-        q_rewards = np.load(plot_dir + "q_rewards.npz")
+        q_rewards = np.load(plot_dir + "q_rewards_non_markov.npz")
         q_values = q_rewards["q"]
         rewards = q_rewards["r"]
         plot_rewards(rewards)
