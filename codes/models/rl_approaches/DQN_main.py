@@ -51,7 +51,7 @@ parser.add_argument('--total-steps', type=int, default=250000, help='Total numbe
 args = parser.parse_args()
 
 data_dir = "./codes/data/rl_approaches/{}/memory/".format(args.game_type)
-model_dir = "./codes/models/rl_approaches/{}/models/".format(args.game_type)
+model_dir = "./codes/stored_models/rl_approaches/{}/models/".format(args.game_type)
 plot_dir = "./codes/plots/{}/".format(args.game_type)
 log_dir = "./codes/logs/{}/".format(args.game_type)
 if not os.path.exists(data_dir):
