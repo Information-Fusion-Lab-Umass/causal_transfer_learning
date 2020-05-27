@@ -39,6 +39,7 @@ parser.add_argument('--hidden-size', type=int, default=64, help='size of hidden 
 parser.add_argument('--EPS-START', type=float, default=1.0, help='Exploration constant for start')
 parser.add_argument('--EPS-END', type=float, default=0.01, help='Exploration constant for end')
 parser.add_argument('--EPS-DECAY', type=int, default=250000, help='Number of steps for epsilon decay')
+parser.add_argument('--TARGET-UPDATE', type=int, default=2000, help='Number of steps for updating the target net')
 parser.add_argument('--memory-size', type=int, default=int(10e6), metavar='CAPACITY', help='Experience replay memory capacity')
 parser.add_argument('--batch-size', type=int, default=256, metavar='SIZE', help='Batch size')
 parser.add_argument('--num-episodes', type=int, default=100, metavar='N', help='Number of episodes to run for collecting data')
@@ -88,14 +89,15 @@ def select_action(policy_net, state, args, eval_mode = False):
     global steps_done
     sample = random.random()
     if eval_mode == False:
-        eps_threshold = args.EPS_END + (args.EPS_START - args.EPS_END) * math.exp(-1. * steps_done / args.EPS_DECAY)
+        eps_threshold = min(1.0, args.EPS_START + ((steps_done - args.burning)/args.EPS_DECAY) * (args.EPS_END - args.EPS_START ))
+        # logger.info("Steps done {}, Epsilon {}".format(steps_done, eps_threshold))
         steps_done += 1
     else:
         eps_threshold = 0.001
     if sample > eps_threshold:
         with torch.no_grad():
             result, latent_embeddings = policy_net(state.reshape(1, args.input_channels, args.h, args.w))
-            action = result.max(1)[1].view(1, 1)
+            action = result.max(1)[1].view(1, 1).detach().numpy()[0][0]
     else:
         action = random.randrange(args.action_space)
     return action, eps_threshold
@@ -114,7 +116,7 @@ else:
 print("Running on {}".format(args.device))
 
 # Env
-switch_positions = [[7,7], [4,4]]
+switch_positions = []
 prize_positions = [[8,6],[5,5]]
 x = basic_maze(width = args.width, height = args.height, switch_positions = switch_positions, prize_positions = prize_positions, random_obstacles = args.random_obstacles)
 start_idx = [[8, 1]]
@@ -153,7 +155,7 @@ if args.mode in ["train", "both"]:
     target_net = DQN(args).to(device = args.device)
     target_net.load_state_dict(policy_net.state_dict())
     target_net.eval()
-    optimizer = optim.RMSprop(policy_net.parameters(), lr = 0.0025)
+    optimizer = optim.RMSprop(policy_net.parameters(), lr = args.lr)
     memory = ReplayMemory(args.memory_size)
 
     # Collect random data for initial burning period of 5000
@@ -161,7 +163,7 @@ if args.mode in ["train", "both"]:
     steps_done = 0
     total_rewards = 0
     state = env.reset()
-    TARGET_UPDATE = 2000
+    TARGET_UPDATE = args.TARGET_UPDATE
     count = 0
     for i_episode in tqdm(range(args.total_steps)):
         count = count + 1
@@ -172,10 +174,10 @@ if args.mode in ["train", "both"]:
         action = torch.tensor(action, device = args.device, dtype = torch.long).reshape(1,1)
         # Store the transition in memory
 
-        if steps_done > 5000:
+        if steps_done > TARGET_UPDATE:
             optimize_model(optimizer, policy_net, target_net, memory, args.batch_size, args.device, args.h, args.w, args.input_channels, args.gamma)
         if done:
-            logger.info("Won the game in {} steps {} rewards {} eps_threshold. Resetting the game!".format(count, total_rewards, eps_threshold))
+            logger.info("Won the game: steps {} rewards {:.2f} eps_threshold {:.2f}".format(count, total_rewards, eps_threshold))
             memory.push(preprocess_image(state), action, reward, None)
             env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True)
             state = env.reset()
@@ -184,13 +186,13 @@ if args.mode in ["train", "both"]:
         else:
             memory.push(preprocess_image(state), action, reward, preprocess_image(next_state))
             if count >= args.max_episode_length:
-                logger.info("Terminating episode as {} steps {} rewards {} eps_threshold. Resetting the game!".format(count, total_rewards, eps_threshold))
+                logger.info("Terminating episode: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, total_rewards, eps_threshold))
                 state = env.reset()
                 count = 0
                 total_rewards = 0
             else:
                 state = next_state
-        if i_episode % TARGET_UPDATE == 0 and steps_done > 5000:
+        if i_episode % TARGET_UPDATE == 0 and steps_done > TARGET_UPDATE:
             target_net.load_state_dict(policy_net.state_dict())
 
     torch.save(memory, data_dir + "replay_buffer")
@@ -202,12 +204,12 @@ else:
     policy_net = DQN(args).to(device=args.device)
     policy_net.load_state_dict(torch.load(model_dir + "policy_net_DQN"))
     rewards = np.zeros((args.num_trials, args.num_episodes))
-    for trial in range(args.num_trials):
-        for i_episode in range(args.num_episodes):
+    for trial in tqdm(range(args.num_trials)):
+        for i_episode in tqdm(range(args.num_episodes)):
             total_rewards = 0
             state = env.reset()
             for step in range(args.max_episode_length):
-                action = select_action(policy_net, preprocess_image(state), args, eval_mode = True)
+                action, eps_threshold = select_action(policy_net, preprocess_image(state), args, eval_mode = True)
                 next_state, reward, done, info = env.step(action)
                 total_rewards = total_rewards + reward
                 if done:
