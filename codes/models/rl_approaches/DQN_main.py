@@ -48,6 +48,7 @@ parser.add_argument('--action-space', type=int, default=4, help='Number of defau
 parser.add_argument('--lr', type=float, default=2.5e-4, help='Learning Rate')
 parser.add_argument('--gamma', type=float, default=1.0, help='Discount Factor')
 parser.add_argument('--total-steps', type=int, default=250000, help='Total number of steps for training')
+parser.add_argument('--burning', type=int, default=2000, help='Burning number of steps for which random policy follows')
 args = parser.parse_args()
 
 data_dir = "./codes/data/rl_approaches/{}/memory/".format(args.game_type)
@@ -90,7 +91,7 @@ def select_action(policy_net, state, args, eval_mode = False):
     sample = random.random()
     if eval_mode == False:
         eps_threshold = min(1.0, args.EPS_START + ((steps_done - args.burning)/args.EPS_DECAY) * (args.EPS_END - args.EPS_START ))
-        # logger.info("Steps done {}, Epsilon {}".format(steps_done, eps_threshold))
+        logger.info("Steps done {}, Epsilon {}".format(steps_done, eps_threshold))
         steps_done += 1
     else:
         eps_threshold = 0.001
