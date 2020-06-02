@@ -43,6 +43,7 @@ class SourceEnv(BaseEnv):
                 reward = 1
                 self.prize_count = self.prize_count + 1
                 if self.prize_count == len(self.initial_positions["prize"]):
+                    # self.logger.info("Reward {} Prize count {}".format(reward, self.prize_count))
                     done = True
             else:
                 reward = -1
