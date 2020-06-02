@@ -51,7 +51,6 @@ parser.add_argument('--total-steps', type=int, default=250000, help='Total numbe
 parser.add_argument('--burning', type=int, default=2000, help='Burning number of steps for which random policy follows')
 parser.add_argument('--no_switches', action = 'store_true', help='Disable switches')
 
-
 args = parser.parse_args()
 
 data_dir = "./codes/data/rl_approaches/{}/memory/".format(args.game_type)
@@ -72,7 +71,8 @@ if not os.path.exists(log_dir):
 
 format = "%(asctime)s.%(msecs)03d: - %(levelname)s: %(message)s"
 logging.basicConfig(format=format, level=logging.INFO,
-datefmt="%H:%M:%S", handlers=[logging.FileHandler("{}/dqn_training.log".format(log_dir), "a")])
+datefmt="%H:%M:%S", handlers=[logging.FileHandler("{}/dqn_training.log".format(log_dir), "w+")])
+
 logger = logging.getLogger(__name__)
 
 
@@ -82,17 +82,17 @@ if args.env == "source":
 if args.env == "target":
     invert = True
 
+
 def preprocess_image(image, device):
     image = cv2.resize(image, (40, 40), interpolation=cv2.INTER_LINEAR).reshape(40,40,3).transpose(2,0,1)
     return torch.from_numpy(image).type(torch.FloatTensor).to(device)
-    # return torch.from_numpy(image)
-
 
 def select_action(policy_net, state, args, eval_mode = False):
     # linear decay
     global steps_done
     sample = random.random()
     if eval_mode == False:
+
         eps_threshold = max(args.EPS_END,  min(1.0, args.EPS_START + ((steps_done - args.burning)/args.EPS_DECAY) * (args.EPS_END - args.EPS_START )))
         #logger.info("Steps done {}, Epsilon {}".format(steps_done, eps_threshold))
         steps_done += 1
@@ -112,12 +112,12 @@ for k, v in vars(args).items():
   logger.info(' ' * 26 + k + ': ' + str(v))
 
 logger.info("cuda available {} device count {}".format(torch.cuda.is_available(), torch.cuda.device_count()))
-
 if torch.cuda.is_available() and not args.disable_cuda:
     args.device = torch.device('cuda')
     torch.cuda.manual_seed(np.random.randint(1, 10000))
 else:
      args.device = torch.device('cpu')
+
 
 logger.info("Running on {}".format(args.device))
 
@@ -144,8 +144,8 @@ prize_positions = env.maze.objects.prize.positions
 initial_positions = {"free": empty_positions, "switch": switch_positions, "prize": prize_positions}
 
 env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True)
-
 state = preprocess_image(env.reset(), args.device)
+
 # plt.imshow(state.detach().numpy().transpose(1,2,0))
 # plt.show()
 # plt.close()
@@ -213,6 +213,7 @@ if args.mode in ["train", "both"]:
     torch.save(memory, data_dir + "replay_buffer")
     torch.save(policy_net.state_dict(), model_dir + "policy_net_DQN")
     torch.save(target_net.state_dict(), model_dir + "target_net_DQN")
+
 
 if args.mode in ["eval", "both"]:
     memory = torch.load(data_dir + "replay_buffer")

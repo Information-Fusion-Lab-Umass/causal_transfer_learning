@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import numpy as np
+
 import matplotlib.pyplot as plt
 
 def plot_rewards(rewards, plot_dir):
@@ -44,6 +45,7 @@ def optimize_model(optimizer, policy_net, target_net, memory, BATCH_SIZE, device
     # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
     # columns of actions taken. These are the actions which would've been taken
     # for each batch state according to policy_net
+
     q_a = policy_net(state_batch)
     state_action_values = q_a.gather(1, action_batch)
 
