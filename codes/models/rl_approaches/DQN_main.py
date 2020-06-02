@@ -49,6 +49,9 @@ parser.add_argument('--lr', type=float, default=2.5e-4, help='Learning Rate')
 parser.add_argument('--gamma', type=float, default=1.0, help='Discount Factor')
 parser.add_argument('--total-steps', type=int, default=250000, help='Total number of steps for training')
 parser.add_argument('--burning', type=int, default=2000, help='Burning number of steps for which random policy follows')
+parser.add_argument('--no_switches', action = 'store_true', help='Disable switches')
+
+
 args = parser.parse_args()
 
 data_dir = "./codes/data/rl_approaches/{}/memory/".format(args.game_type)
@@ -69,7 +72,7 @@ if not os.path.exists(log_dir):
 
 format = "%(asctime)s.%(msecs)03d: - %(levelname)s: %(message)s"
 logging.basicConfig(format=format, level=logging.INFO,
-datefmt="%H:%M:%S", handlers=[logging.FileHandler("{}/dqn_training.log".format(log_dir), "w+")])
+datefmt="%H:%M:%S", handlers=[logging.FileHandler("{}/dqn_training.log".format(log_dir), "a")])
 logger = logging.getLogger(__name__)
 
 
@@ -79,9 +82,9 @@ if args.env == "source":
 if args.env == "target":
     invert = True
 
-def preprocess_image(image):
-    image = cv2.resize(image, (32, 32), interpolation=cv2.INTER_LINEAR).reshape(32,32,3).transpose(2,0,1)
-    return torch.from_numpy(image).type(torch.FloatTensor)
+def preprocess_image(image, device):
+    image = cv2.resize(image, (40, 40), interpolation=cv2.INTER_LINEAR).reshape(40,40,3).transpose(2,0,1)
+    return torch.from_numpy(image).type(torch.FloatTensor).to(device)
     # return torch.from_numpy(image)
 
 
@@ -90,23 +93,25 @@ def select_action(policy_net, state, args, eval_mode = False):
     global steps_done
     sample = random.random()
     if eval_mode == False:
-        eps_threshold = min(1.0, args.EPS_START + ((steps_done - args.burning)/args.EPS_DECAY) * (args.EPS_END - args.EPS_START ))
-        logger.info("Steps done {}, Epsilon {}".format(steps_done, eps_threshold))
+        eps_threshold = max(args.EPS_END,  min(1.0, args.EPS_START + ((steps_done - args.burning)/args.EPS_DECAY) * (args.EPS_END - args.EPS_START )))
+        #logger.info("Steps done {}, Epsilon {}".format(steps_done, eps_threshold))
         steps_done += 1
     else:
         eps_threshold = 0.001
     if sample > eps_threshold:
         with torch.no_grad():
-            result, latent_embeddings = policy_net(state.reshape(1, args.input_channels, args.h, args.w))
-            action = result.max(1)[1].view(1, 1).detach().numpy()[0][0]
+            result  = policy_net(state.reshape(1, args.input_channels, args.h, args.w))
+            action = result.max(1)[1].view(1, 1).cpu().detach().numpy()[0][0]
     else:
         action = random.randrange(args.action_space)
     return action, eps_threshold
 
 args = parser.parse_args()
-print(' ' * 26 + 'Options')
+logger.info(' ' * 26 + 'Options')
 for k, v in vars(args).items():
-  print(' ' * 26 + k + ': ' + str(v))
+  logger.info(' ' * 26 + k + ': ' + str(v))
+
+logger.info("cuda available {} device count {}".format(torch.cuda.is_available(), torch.cuda.device_count()))
 
 if torch.cuda.is_available() and not args.disable_cuda:
     args.device = torch.device('cuda')
@@ -114,11 +119,16 @@ if torch.cuda.is_available() and not args.disable_cuda:
 else:
      args.device = torch.device('cpu')
 
-print("Running on {}".format(args.device))
+logger.info("Running on {}".format(args.device))
 
 # Env
-switch_positions = []
+if args.no_switches:
+    switch_positions = []
+else:
+    switch_positions = [[7,1],[3,2]]
 prize_positions = [[8,6],[5,5]]
+logger.info("Switch Positions {}, Prize positions {}".format(switch_positions, prize_positions))
+
 x = basic_maze(width = args.width, height = args.height, switch_positions = switch_positions, prize_positions = prize_positions, random_obstacles = args.random_obstacles)
 start_idx = [[8, 1]]
 env_id = 'TriggerGame-v0'
@@ -135,8 +145,7 @@ initial_positions = {"free": empty_positions, "switch": switch_positions, "prize
 
 env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True)
 
-state = env.reset()
-state = preprocess_image(state)
+state = preprocess_image(env.reset(), args.device)
 # plt.imshow(state.detach().numpy().transpose(1,2,0))
 # plt.show()
 # plt.close()
@@ -163,60 +172,69 @@ if args.mode in ["train", "both"]:
 
     steps_done = 0
     total_rewards = 0
-    state = env.reset()
+    state = preprocess_image(env.reset(), args.device)
     TARGET_UPDATE = args.TARGET_UPDATE
     count = 0
+    discount_factor = 1
     for i_episode in tqdm(range(args.total_steps)):
         count = count + 1
-        action, eps_threshold = select_action(policy_net, preprocess_image(state), args)
+        action, eps_threshold = select_action(policy_net, state, args)
         next_state, reward, done, info = env.step(action)
-        total_rewards = total_rewards + reward
+        next_state = preprocess_image(next_state, args.device)
+        total_rewards = total_rewards + discount_factor*reward
+        discount_factor = discount_factor * args.gamma
         reward = torch.tensor(reward, device = args.device, dtype = torch.float32).reshape(1,1)
         action = torch.tensor(action, device = args.device, dtype = torch.long).reshape(1,1)
         # Store the transition in memory
 
-        if steps_done > TARGET_UPDATE:
+        if steps_done >= args.burning:
             optimize_model(optimizer, policy_net, target_net, memory, args.batch_size, args.device, args.h, args.w, args.input_channels, args.gamma)
         if done:
-            logger.info("Won the game: steps {} rewards {:.2f} eps_threshold {:.2f}".format(count, total_rewards, eps_threshold))
-            memory.push(preprocess_image(state), action, reward, None)
+            logger.info("Won the game: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
+            memory.push(state, action, reward, None)
             env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True)
-            state = env.reset()
+            state = preprocess_image(env.reset(), args.device)
             count = 0
             total_rewards = 0
+            discount_factor = 1
         else:
-            memory.push(preprocess_image(state), action, reward, preprocess_image(next_state))
+            memory.push(state, action, reward, next_state)
             if count >= args.max_episode_length:
-                logger.info("Terminating episode: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, total_rewards, eps_threshold))
-                state = env.reset()
+                logger.info("Terminating episode: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
+                state = preprocess_image(env.reset(), args.device)
                 count = 0
                 total_rewards = 0
+                discount_factor = 1
             else:
                 state = next_state
-        if i_episode % TARGET_UPDATE == 0 and steps_done > TARGET_UPDATE:
+        if i_episode % TARGET_UPDATE == 0 and steps_done >= TARGET_UPDATE and steps_done >= args.burning:
             target_net.load_state_dict(policy_net.state_dict())
 
     torch.save(memory, data_dir + "replay_buffer")
     torch.save(policy_net.state_dict(), model_dir + "policy_net_DQN")
     torch.save(target_net.state_dict(), model_dir + "target_net_DQN")
 
-else:
+if args.mode in ["eval", "both"]:
     memory = torch.load(data_dir + "replay_buffer")
     policy_net = DQN(args).to(device=args.device)
     policy_net.load_state_dict(torch.load(model_dir + "policy_net_DQN"))
     rewards = np.zeros((args.num_trials, args.num_episodes))
     for trial in tqdm(range(args.num_trials)):
         for i_episode in tqdm(range(args.num_episodes)):
+            env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True)
+            state = preprocess_image(env.reset(), args.device)
             total_rewards = 0
-            state = env.reset()
+            discount_factor = 1
+            state = preprocess_image(env.reset(), args.device)
             for step in range(args.max_episode_length):
-                action, eps_threshold = select_action(policy_net, preprocess_image(state), args, eval_mode = True)
+                action, eps_threshold = select_action(policy_net, state, args, eval_mode = True)
                 next_state, reward, done, info = env.step(action)
-                total_rewards = total_rewards + reward
+                total_rewards = total_rewards + discount_factor* reward
+                discount_factor = discount_factor * args.gamma
                 if done:
-                    print("Won the game in {} steps. Resetting the game!".format(i_episode))
+                    logger.info("Won the game in {} steps. Resetting the game!".format(step))
                     break
             rewards[trial, i_episode] = total_rewards
-            print("Trial {} Episode {} rewards {}".format(trial, i_episode, rewards[trial, i_episode]))
+            logger.info("Trial {} Episode {} rewards {}".format(trial, i_episode, rewards[trial, i_episode]))
     np.savez(plot_dir + "dqn_rewards", r = rewards)
     plot_rewards(rewards, plot_dir)

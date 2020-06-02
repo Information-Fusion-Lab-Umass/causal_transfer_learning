@@ -48,7 +48,7 @@ class SourceEnv(BaseEnv):
                 reward = -1
 
         if self._is_obstacle(new_position):
-            reward = -0.05
+            reward = 0
 
         if valid:
             self.maze.objects.agent.positions = [new_position]

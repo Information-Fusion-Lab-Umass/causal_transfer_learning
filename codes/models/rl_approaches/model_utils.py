@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import numpy as np
+import matplotlib.pyplot as plt
 
 def plot_rewards(rewards, plot_dir):
     n_trials, n_episodes = rewards.shape
@@ -43,7 +44,7 @@ def optimize_model(optimizer, policy_net, target_net, memory, BATCH_SIZE, device
     # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
     # columns of actions taken. These are the actions which would've been taken
     # for each batch state according to policy_net
-    q_a, embeddings = policy_net(state_batch)
+    q_a = policy_net(state_batch)
     state_action_values = q_a.gather(1, action_batch)
 
     # Compute V(s_{t+1}) for all next states.
@@ -52,7 +53,7 @@ def optimize_model(optimizer, policy_net, target_net, memory, BATCH_SIZE, device
     # This is merged based on the mask, such that we'll have either the expected
     # state value or 0 in case the state was final.
     next_state_values = torch.zeros(BATCH_SIZE, device=device)
-    next_q_a, result_embeddings = target_net(non_final_next_states)
+    next_q_a  = target_net(non_final_next_states)
     next_state_values[non_final_mask] = next_q_a.max(1)[0].detach()
 
     next_state_values = next_state_values.reshape(BATCH_SIZE, 1)

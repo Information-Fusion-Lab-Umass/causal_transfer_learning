@@ -1,0 +1,3 @@
+#!/bin/bash
+PYTHONNPATH=$PWD python codes/models/rl_approaches/DQN_main.py --height 10 --width 10 --render 0 --game_type trigger_non_markov --mode both --total-steps 10000 --EPS-DECAY 10000 --TARGET-UPDATE 2000 
+
