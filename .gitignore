@@ -8,4 +8,4 @@ saved_models/
 logs/
 *.png
 .DS_Store
-memory/
+codes/data/rl_approaches/trigger_non_markov/memory/replay_buffer
