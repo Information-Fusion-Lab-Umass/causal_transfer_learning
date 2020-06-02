@@ -137,13 +137,13 @@ gym.envs.register(id = env_id, entry_point = SourceEnv, max_episode_steps = 1000
 
 # max_length = 1
 # history_length = 4
-env = gym.make(env_id, x = copy(x), start_idx = start_idx, invert = invert, return_image = True)
+env = gym.make(env_id, x = copy(x), start_idx = start_idx, invert = invert, return_image = True, logger = logger)
 empty_positions = env.maze.objects.free.positions
 switch_positions = env.maze.objects.switch.positions
 prize_positions = env.maze.objects.prize.positions
 initial_positions = {"free": empty_positions, "switch": switch_positions, "prize": prize_positions}
 
-env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True)
+env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
 state = preprocess_image(env.reset(), args.device)
 
 # plt.imshow(state.detach().numpy().transpose(1,2,0))
@@ -169,7 +169,6 @@ if args.mode in ["train", "both"]:
     memory = ReplayMemory(args.memory_size)
 
     # Collect random data for initial burning period of 5000
-
     steps_done = 0
     total_rewards = 0
     state = preprocess_image(env.reset(), args.device)
@@ -192,7 +191,7 @@ if args.mode in ["train", "both"]:
         if done:
             logger.info("Won the game: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
             memory.push(state, action, reward, None)
-            env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True)
+            env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
             state = preprocess_image(env.reset(), args.device)
             count = 0
             total_rewards = 0
@@ -201,6 +200,7 @@ if args.mode in ["train", "both"]:
             memory.push(state, action, reward, next_state)
             if count >= args.max_episode_length:
                 logger.info("Terminating episode: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
+                env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
                 state = preprocess_image(env.reset(), args.device)
                 count = 0
                 total_rewards = 0
@@ -222,7 +222,7 @@ if args.mode in ["eval", "both"]:
     rewards = np.zeros((args.num_trials, args.num_episodes))
     for trial in tqdm(range(args.num_trials)):
         for i_episode in tqdm(range(args.num_episodes)):
-            env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True)
+            env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
             state = preprocess_image(env.reset(), args.device)
             total_rewards = 0
             discount_factor = 1
