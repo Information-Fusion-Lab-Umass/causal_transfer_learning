@@ -1,6 +1,6 @@
 import numpy as np
 
-def get_neighboring_objects(X, action_ohe, switch_count):
+def get_neighboring_objects(X, action, switch_count):
     Y = []
     idx = 1
     for i in range(X.shape[0]):
@@ -29,7 +29,7 @@ def get_neighboring_objects(X, action_ohe, switch_count):
                 features.append(d)
                 features.append(l)
                 features.append(r)
-                features.append(action_ohe)
+                features.append([action])
                 features.append([switch_count])
             except Exception as e:
                  print(e)
@@ -45,7 +45,6 @@ def get_neighboring_objects(X, action_ohe, switch_count):
 
 def get_oo_repr(t, objects, action, n_colors, n_actions):
     A = []
-    print(objects)
     for o in objects:
         if o.name == "switch":
             switch_count = len(o.positions)
@@ -59,15 +58,16 @@ def get_oo_repr(t, objects, action, n_colors, n_actions):
     colors_dict = {}
     for i in range(len(colors)):
         colors_dict[colors_int[i]] = colors[i]
-    X = np.zeros((A.shape[0], n_colors + 4), dtype=np.dtype('a16'))
+    X = np.zeros((A.shape[0], 5), dtype=np.dtype('a16'))
 
     X[:, 0] = colors
     X[:, 1] = np.ones(A.shape[0])* t
     X[:, 2] = A[:, 1]
     X[:, 3] = A[:, 2]
-    X[:, 4: 4+n_colors] = one_hot(colors_int, n_colors)
-    action_ohe = one_hot(np.ones(1, dtype = "int")* int(action), n_actions)
-    nbrs = get_neighboring_objects(X, action_ohe, switch_count)
+    X[:, 4] = colors_int
+    # X[:, 4: 4+n_colors] = one_hot(colors_int, n_colors)
+    # action_ohe = one_hot(np.ones(1, dtype = "int")* int(action), n_actions)
+    nbrs = get_neighboring_objects(X, action, switch_count)
     return nbrs, colors_dict
 
 def one_hot(a, num_classes):
