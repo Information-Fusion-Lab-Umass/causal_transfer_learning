@@ -40,7 +40,10 @@ class BaseEnv(gym.Env, ABC):
         img_width, img_height = img.shape[:2]
         ratio = max_width/img_width
         img = Image.fromarray(img).resize([int(ratio*img_width), int(ratio*img_height)])
+        # plt.imshow(img)
+        # plt.show(img)
         img = np.asarray(img)
+
         if mode == 'rgb_array':
             return img
         elif mode == 'human':

@@ -9,7 +9,7 @@ def get_all_pos(width, height):
             all_pos.append((w,h))
     return all_pos
 
-def basic_maze(width, height, switch_positions, prize_positions, random_obstacles, n_colors = 4):
+def basic_maze(width, height, total_switches, total_prizes, random_obstacles, n_colors = 4):
     r""" Maze for source environment containing 2 red colored switches (int = 2) and 2 pink prizes (int = 3).
     All switches need to be turned on before opening a door. """
 
@@ -23,6 +23,9 @@ def basic_maze(width, height, switch_positions, prize_positions, random_obstacle
 
     all_pos = get_all_pos(width, height)
     N = len(all_pos)
+    f = np.argwhere(x == 0)
+    start = np.random.choice(len(f), size = 1)
+    start_idx = [f[i] for i in start]
 
     if random_obstacles:
         frac = 1/n_colors
@@ -34,26 +37,15 @@ def basic_maze(width, height, switch_positions, prize_positions, random_obstacle
             x[tuple(np.array(req_pos).T)] = c + 1
 
     else:
-        for pos in switch_positions:
-            x[pos[0],pos[1]] = 2
+        f = np.argwhere(x == 0)
+        r = np.random.choice(len(f), size = total_switches)
+        switch_positions = [f[i] for i in r]
+        x[tuple(np.array(switch_positions).T)] = 2
 
-        for pos in prize_positions:
-            x[pos[0],pos[1]] = 3
 
+        f = np.argwhere(x == 0)
+        r = np.random.choice(len(f), size = total_prizes)
+        prize_positions = [f[i] for i in r]
+        x[tuple(np.array(prize_positions).T)] = 3
 
-    # f = np.argwhere(x == 0)
-    # if len(switch_positions) == 0:
-    #     s = np.random.choice(len(f), size = 2)
-    #     switch_positions = [f[i] for i in s]
-    #
-    # for pos in switch_positions:
-    #         x[pos[0],pos[1]] = 2
-    #
-    # f = np.argwhere(x == 0)
-    # if len(prize_positions) == 0:
-    #     p = np.random.choice(len(f), size = 2)
-    #     prize_positions = [f[i] for i in p]
-    #
-    # for pos in prize_positions:
-    #     x[pos[0],pos[1]] = 3
-    return x
+    return x, start_idx

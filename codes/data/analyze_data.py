@@ -42,7 +42,6 @@ names = ['bias', 'ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
 
 for i in range(4):
     s_form = structural_form(discrete, action = i)
-    print(discrete.shape, s_form.shape)
     # np.savetxt(current_dir + "mat/R/oo_s_form_{}.csv".format(i), s_form[:20], delimiter = ",")
     np.savez(data_dir + "oo_action_{}_{}.npz".format(i, args.game_type), mat = s_form, c_dict = [c_dict])
 

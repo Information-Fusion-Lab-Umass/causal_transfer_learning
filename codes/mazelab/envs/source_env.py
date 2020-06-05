@@ -67,10 +67,10 @@ class SourceEnv(BaseEnv):
 
     def reset(self):
         self.maze.objects.agent.positions = self.start_idx
-        # self.maze.objects.free.positions = [ x for x in self.initial_positions["free"] if not (x[0] == self.start_idx[0][0] and x[1] == self.start_idx[0][1])]
-        # # self.maze.objects.free.positions = self.initial_positions["free"]
-        # self.maze.objects.switch.positions = self.initial_positions["switch"]
-        # self.maze.objects.prize.positions = self.initial_positions["prize"]
+        self.maze.objects.free.positions = [ x for x in self.initial_positions["free"] if not (x[0] == self.start_idx[0][0] and x[1] == self.start_idx[0][1])]
+        # self.maze.objects.free.positions = self.initial_positions["free"]
+        self.maze.objects.switch.positions = self.initial_positions["switch"]
+        self.maze.objects.prize.positions = self.initial_positions["prize"]
         if self.return_image:
             return self.render(mode = 'rgb_array')
         else:
