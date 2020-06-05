@@ -24,9 +24,9 @@ class DQN(nn.Module):
         self.convw = self.conv_size_out(self.conv_size_out(self.conv_size_out(self.w)))
         self.convh = self.conv_size_out(self.conv_size_out(self.conv_size_out(self.h)))
         self.conv_output_size = int(self.convw) * int(self.convh) * 32
+
         self.fc1 = nn.Linear(self.conv_output_size, self.hidden_size)
         self.fc2 = nn.Linear(self.hidden_size, self.action_space)
-
     def conv_size_out(self, w, k = 5, s = 2):
         return ((w - k+(2*self.p))/s) + 1
 

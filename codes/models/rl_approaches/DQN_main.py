@@ -229,6 +229,7 @@ if args.mode in ["train", "both"]:
     np.savez(plot_dir + "dqn_train_rewards.npz", r = rewards_array)
 
 
+
 if args.mode in ["eval", "both"]:
     # memory = torch.load(data_dir + "replay_buffer")
     policy_net = DQN(args).to(device=args.device)
