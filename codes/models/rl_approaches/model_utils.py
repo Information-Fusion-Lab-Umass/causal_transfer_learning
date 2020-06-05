@@ -7,20 +7,21 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-def plot_rewards(rewards, plot_dir):
+def plot_rewards(rewards, plot_name, std_error = False):
     n_trials, n_episodes = rewards.shape
 
     mean = np.mean(rewards, axis = 0)
     std = np.std(rewards, axis = 0)
     N = np.arange(n_episodes)
     plt.plot(N, mean)
-    plt.fill_between(N, mean - std, mean + std, color='gray', alpha=0.2)
+    if std_error == True:
+    	plt.fill_between(N, mean - std, mean + std, color='gray', alpha=0.2)
     # plt.plot(N, mean+std)
     # plt.plot(np.arange(n_episodes), np.mean(rewards, axis = 0))
     plt.title("Q-learning rewards")
     plt.xlabel("Number of episodes")
     plt.ylabel("Cumulative reward")
-    plt.savefig(plot_dir + "reward_plot.png")
+    plt.savefig(plot_name)
 
 def optimize_model(optimizer, policy_net, target_net, memory, BATCH_SIZE, device, height, width, input_channels, GAMMA = 1.0):
     if len(memory) < BATCH_SIZE:
@@ -71,3 +72,4 @@ def optimize_model(optimizer, policy_net, target_net, memory, BATCH_SIZE, device
     for param in policy_net.parameters():
         param.grad.data.clamp_(-1, 1)
     optimizer.step()
+    return loss

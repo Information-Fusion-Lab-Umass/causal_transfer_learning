@@ -21,6 +21,7 @@ import math
 from model_utils import *
 import logging
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 # Arguments
 parser = argparse.ArgumentParser(description="causality")
@@ -37,7 +38,7 @@ parser.add_argument('--max-episode-length', type=int, default=int(1000), help='M
 parser.add_argument('--history-length', type=int, default= 1, help='Number of consecutive states processed')
 parser.add_argument('--hidden-size', type=int, default=64, help='size of hidden layer')
 parser.add_argument('--EPS-START', type=float, default=1.0, help='Exploration constant for start')
-parser.add_argument('--EPS-END', type=float, default=0.01, help='Exploration constant for end')
+parser.add_argument('--EPS-END', type=float, default=0.05, help='Exploration constant for end')
 parser.add_argument('--EPS-DECAY', type=int, default=250000, help='Number of steps for epsilon decay')
 parser.add_argument('--TARGET-UPDATE', type=int, default=2000, help='Number of steps for updating the target net')
 parser.add_argument('--memory-size', type=int, default=int(10e6), metavar='CAPACITY', help='Experience replay memory capacity')
@@ -45,10 +46,11 @@ parser.add_argument('--batch-size', type=int, default=256, metavar='SIZE', help=
 parser.add_argument('--num-episodes', type=int, default=100, metavar='N', help='Number of episodes to run for collecting data')
 parser.add_argument('--num-trials', type=int, default=100, help='Number of trials for training data')
 parser.add_argument('--action-space', type=int, default=4, help='Number of default actions for the game: UP, DOWN, RIGHT, LEFT')
-parser.add_argument('--lr', type=float, default=2.5e-4, help='Learning Rate')
+parser.add_argument('--lr', type=float, default=1e-3, help='Learning Rate')
 parser.add_argument('--gamma', type=float, default=1.0, help='Discount Factor')
 parser.add_argument('--total-steps', type=int, default=250000, help='Total number of steps for training')
-parser.add_argument('--burning', type=int, default=2000, help='Burning number of steps for which random policy follows')
+parser.add_argument('--burning', type=int, default=3000, help='Burning number of steps for which random policy follows')
+parser.add_argument('--start-learn-thresh', type=int, default=1000, help='Learning steps after which model learns')
 parser.add_argument('--no_switches', action = 'store_true', help='Disable switches')
 
 args = parser.parse_args()
@@ -92,8 +94,8 @@ def select_action(policy_net, state, args, eval_mode = False):
     global steps_done
     sample = random.random()
     if eval_mode == False:
-
-        eps_threshold = max(args.EPS_END,  min(1.0, args.EPS_START + ((steps_done - args.burning)/args.EPS_DECAY) * (args.EPS_END - args.EPS_START )))
+        eps_threshold = min(1.0, max(0.05, 1 - (steps_done - args.burning)/(args.EPS_DECAY - args.burning)))
+        # eps_threshold = max(args.EPS_END,  min(1.0, args.EPS_START + ((steps_done - args.burning)/args.EPS_DECAY) * (args.EPS_END - args.EPS_START )))
         #logger.info("Steps done {}, Epsilon {}".format(steps_done, eps_threshold))
         steps_done += 1
     else:
@@ -126,7 +128,7 @@ if args.no_switches:
     switch_positions = []
 else:
     switch_positions = [[7,1],[3,2]]
-prize_positions = [[8,6],[5,5]]
+prize_positions = [[2,2],[8,6]]
 logger.info("Switch Positions {}, Prize positions {}".format(switch_positions, prize_positions))
 
 x = basic_maze(width = args.width, height = args.height, switch_positions = switch_positions, prize_positions = prize_positions, random_obstacles = args.random_obstacles)
@@ -159,66 +161,80 @@ args.h = screen_height
 args.input_channels = input_channels
 
 ############################ Training #########################################################
-
+all_rewards = []
 if args.mode in ["train", "both"]:
-    policy_net = DQN(args).to(device=args.device)
-    target_net = DQN(args).to(device = args.device)
-    target_net.load_state_dict(policy_net.state_dict())
-    target_net.eval()
-    optimizer = optim.RMSprop(policy_net.parameters(), lr = args.lr)
-    memory = ReplayMemory(args.memory_size)
+    for trial in tqdm(range(args.num_trials)):
+        logger.info("trial {}".format(trial))
+        policy_net = DQN(args).to(device=args.device)
+        target_net = DQN(args).to(device = args.device)
+        target_net.load_state_dict(policy_net.state_dict())
+        target_net.eval()
+        optimizer = optim.RMSprop(policy_net.parameters(), lr = args.lr)
+        memory = ReplayMemory(args.memory_size)
+        loss_vector = np.zeros(args.total_steps - args.burning + 1)
+        reward_vector = []
 
-    # Collect random data for initial burning period of 5000
-    steps_done = 0
-    total_rewards = 0
-    state = preprocess_image(env.reset(), args.device)
-    TARGET_UPDATE = args.TARGET_UPDATE
-    count = 0
-    discount_factor = 1
-    for i_episode in tqdm(range(args.total_steps)):
-        count = count + 1
-        action, eps_threshold = select_action(policy_net, state, args)
-        next_state, reward, done, info = env.step(action)
-        next_state = preprocess_image(next_state, args.device)
-        total_rewards = total_rewards + discount_factor*reward
-        discount_factor = discount_factor * args.gamma
-        reward = torch.tensor(reward, device = args.device, dtype = torch.float32).reshape(1,1)
-        action = torch.tensor(action, device = args.device, dtype = torch.long).reshape(1,1)
-        # Store the transition in memory
+        # Collect random data for initial burning period of 5000
+        steps_done = 0
+        total_rewards = 0
+        state = preprocess_image(env.reset(), args.device)
+        TARGET_UPDATE = args.TARGET_UPDATE
+        count = 0
+        discount_factor = 1
+        for i_episode in tqdm(range(args.total_steps)):
+            count = count + 1
+            action, eps_threshold = select_action(policy_net, state, args)
+            next_state, reward, done, info = env.step(action)
+            next_state = preprocess_image(next_state, args.device)
+            total_rewards = total_rewards + discount_factor*reward
+            discount_factor = discount_factor * args.gamma
+            reward = torch.tensor(reward, device = args.device, dtype = torch.float32).reshape(1,1)
+            action = torch.tensor(action, device = args.device, dtype = torch.long).reshape(1,1)
+            # Store the transition in memory
 
-        if steps_done >= args.burning:
-            optimize_model(optimizer, policy_net, target_net, memory, args.batch_size, args.device, args.h, args.w, args.input_channels, args.gamma)
-        if done:
-            logger.info("Won the game: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
-            memory.push(state, action, reward, None)
-            env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
-            state = preprocess_image(env.reset(), args.device)
-            count = 0
-            total_rewards = 0
-            discount_factor = 1
-        else:
-            memory.push(state, action, reward, next_state)
-            if count >= args.max_episode_length:
-                logger.info("Terminating episode: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
+            if steps_done >= args.start_learn_thresh:
+                loss = optimize_model(optimizer, policy_net, target_net, memory, args.batch_size, args.device, args.h, args.w, args.input_channels, args.gamma)
+                loss_vector[steps_done - args.burning] = loss.item()
+                #logger.info("Step {} average Q-learning loss {:.4f}".format(steps_done, loss.item()))
+            if done:
+                #logger.info("Winning Reward {}".format(reward))
+                logger.info("Won the game: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
+                memory.push(state, action, reward, None)
                 env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
                 state = preprocess_image(env.reset(), args.device)
+                reward_vector.append(total_rewards)
                 count = 0
                 total_rewards = 0
                 discount_factor = 1
             else:
-                state = next_state
-        if i_episode % TARGET_UPDATE == 0 and steps_done >= TARGET_UPDATE and steps_done >= args.burning:
-            target_net.load_state_dict(policy_net.state_dict())
+                memory.push(state, action, reward, next_state)
+                if count >= args.max_episode_length:
+                    logger.info("Terminating episode: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
+                    env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
+                    state = preprocess_image(env.reset(), args.device)
+                    reward_vector.append(total_rewards)
+                    count = 0
+                    total_rewards = 0
+                    discount_factor = 1
+                else:
+                    state = next_state
+            if i_episode % TARGET_UPDATE == 0 and steps_done >= TARGET_UPDATE:
+                target_net.load_state_dict(policy_net.state_dict())
 
-    torch.save(memory, data_dir + "replay_buffer")
-    torch.save(policy_net.state_dict(), model_dir + "policy_net_DQN")
-    torch.save(target_net.state_dict(), model_dir + "target_net_DQN")
+        # torch.save(memory, data_dir + "replay_buffer")
+        torch.save(policy_net.state_dict(), model_dir + "policy_net_DQN")
+        torch.save(target_net.state_dict(), model_dir + "target_net_DQN")
+        all_rewards.append(reward_vector)
+    rewards_array = np.array(all_rewards)
+    np.savez(plot_dir + "dqn_train_rewards.npz", r = rewards_array)
 
 
 if args.mode in ["eval", "both"]:
-    memory = torch.load(data_dir + "replay_buffer")
+    # memory = torch.load(data_dir + "replay_buffer")
     policy_net = DQN(args).to(device=args.device)
     policy_net.load_state_dict(torch.load(model_dir + "policy_net_DQN"))
+    train_reward_vec = np.load(plot_dir + "dqn_loss_rewards.npz")['r'].reshape(1,-1)
+    loss_vec = np.load(plot_dir + "dqn_loss_rewards.npz")['l'].reshape(1,-1)
     rewards = np.zeros((args.num_trials, args.num_episodes))
     for trial in tqdm(range(args.num_trials)):
         for i_episode in tqdm(range(args.num_episodes)):
@@ -238,4 +254,6 @@ if args.mode in ["eval", "both"]:
             rewards[trial, i_episode] = total_rewards
             logger.info("Trial {} Episode {} rewards {}".format(trial, i_episode, rewards[trial, i_episode]))
     np.savez(plot_dir + "dqn_rewards", r = rewards)
-    plot_rewards(rewards, plot_dir)
+    plot_rewards(rewards, plot_dir + "test_rewards.png", std_error = True)
+    # plot_rewards(train_reward_vec, plot_dir + "train_rewards.png", std_error = False)
+    # plot_rewards(loss_vec, plot_dir + "train_loss.png", std_error = False)

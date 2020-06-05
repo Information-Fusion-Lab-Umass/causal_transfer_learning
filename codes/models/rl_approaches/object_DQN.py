@@ -4,9 +4,9 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 
-class DQN(nn.Module):
+class Object_DQN(nn.Module):
     def __init__(self, args):
-        super(DQN, self).__init__()
+        super(Object_DQN, self).__init__()
         self.action_space = args.action_space
         self.hidden_size = args.hidden_size
         self.w = args.w
