@@ -88,7 +88,7 @@ class SourceEnv(BaseEnv):
             if new_position[0] == pos[0] and new_position[1] == pos[1]:
                 out = True
                 self.maze.x[pos[0],pos[1]] = self.maze.objects.free.value
-                self.maze.reset_maze(curr_position)
+                self.maze.reset_maze(new_position)
                 break
         return out
 
@@ -99,7 +99,7 @@ class SourceEnv(BaseEnv):
                 out = True
                 if self._is_activated():
                     self.maze.x[pos[0],pos[1]] = self.maze.objects.free.value
-                    self.maze.reset_maze(curr_position)
+                    self.maze.reset_maze(new_position)
                 break
         return out
 

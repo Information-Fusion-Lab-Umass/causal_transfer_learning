@@ -15,7 +15,7 @@ parser.add_argument('--env', default="source", help='type of environment')
 parser.add_argument('--random_obstacles', default= 0, type = int, help='flag to generate random obstacles')
 parser.add_argument('--width', default= 10, type = int, help='width of the grid')
 parser.add_argument('--height', default= 10, type = int, help='height of the grid')
-parser.add_argument('--game_type', default = "bw", choices = ["bw", "all_random_invert", "all_random", "trigger_non_markov"], help = "Type of game", required = True)
+parser.add_argument('--game_type', default = "bw", choices = ["bw", "all_random_invert", "all_random", "trigger_non_markov", "trigger_non_markov_random"], help = "Type of game", required = True)
 parser.add_argument('--render', default = 0, choices = [1, 0], type = int, help = "Type of game")
 parser.add_argument('--mode', default = "eval", choices = ['train', 'eval', 'both'], help ='Train or Evaluate')
 parser.add_argument('--n_switches', default = 2, help ='Number of switches')
@@ -26,7 +26,12 @@ parser.add_argument('--max_episode_length', type=int, default=int(1000), help='M
 args = parser.parse_args()
 
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
-
+actions = {
+0: "up",
+1: "down",
+2: "left",
+3: "right",
+}
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
 def main():
@@ -75,6 +80,12 @@ def main():
                 env.render('human')
                 time.sleep(0.1)
             X, colors_dict = get_oo_repr(count, next_objects, action, n_colors, n_actions)
+            # if(len(next_objects.prize.positions) == len(curr_objects.prize.positions) - 1):
+            #     print("Prize disappeared")
+            #     print("action {}".format(actions[action]))
+            #     print("X {}".format(X, curr_obs, next_obs))
+            #     print("curr_obs {}".format(curr_obs))
+            #     print("next_obs {}".format(next_obs))
             inp.append(X)
             count = count + 1
             curr_objects = next_objects

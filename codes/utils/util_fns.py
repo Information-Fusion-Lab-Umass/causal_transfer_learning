@@ -19,22 +19,15 @@ def append_cons_ts(data):
 
     return result
 
-def structural_form(data, action = -1):
+def structural_form(data):
     m,n = data.shape
-    m_hat, n_hat = int(m/2), (n+2)
+    m_hat, n_hat = int(m/2), (n+1)
     print(m,n, m_hat, n_hat)
     result = np.zeros((m_hat, n_hat))
     for i in range(m_hat):
-        # bias term
-        result[i,0] = 1
-        result[i,1:16] = data[2*i,:15]
-        result[i,16:18] = data[2*i+1,:2]
-
-    if action == -1:
-        return result
-    else:
-        a_indices = np.arange(action, result.shape[0], 4)
-        return result[a_indices]
+        result[i,0:17] = data[2*i,1:18]
+        result[i,17:19] = data[2*i+1,:2]
+    return result
 
 def discretize(inp, colors_dict):
     n_colors = len(colors_dict)

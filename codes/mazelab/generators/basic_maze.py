@@ -30,7 +30,7 @@ def basic_maze(width, height, total_switches, total_prizes, random_obstacles, n_
     if random_obstacles:
         frac = 1/n_colors
         obstacle_size = int(frac * N)
-        for c in range(3):
+        for c in [1,2]:
             f = np.argwhere(x == 0)
             r = np.random.choice(len(f), size = obstacle_size)
             req_pos = [f[i] for i in r]
