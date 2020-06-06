@@ -1,6 +1,6 @@
 import numpy as np
 
-def get_neighboring_objects(X, action, switch_count):
+def get_neighboring_objects(X, action, reward, switch_count):
     Y = []
     idx = 1
     for i in range(X.shape[0]):

@@ -21,12 +21,12 @@ def append_cons_ts(data):
 
 def structural_form(data):
     m,n = data.shape
-    m_hat, n_hat = int(m/2), (n+2)
+    m_hat, n_hat = int(m/2), (n+1)
     print(m,n, m_hat, n_hat)
     result = np.zeros((m_hat, n_hat))
     for i in range(m_hat):
         result[i,0:18] = data[2*i,1:19]
-        result[i,18:20] = data[2*i+1,:2]
+        result[i,18:20] = data[2*i+1,1:3]
     return result
 
 def discretize(inp, colors_dict):
@@ -52,11 +52,10 @@ def analyze(inp, colors_dict):
     n_colors = len(colors_dict)
     if not isinstance(inp, np.ndarray):
         inp = inp.detach().numpy()
-    result = np.zeros((inp.shape[0], 18), dtype=np.dtype('a16'))
+    result = np.zeros((inp.shape[0], 20), dtype=np.dtype('a16'))
     for i in range(len(inp)):
-        result[i,0] = inp[i,0]
-        idx = 1
-        count = 1
+        idx = 0
+        count = 0
         for j in range(5):
             result[i, count] = inp[i, idx]
             result[i, count + 1] = inp[i, idx + 1]
@@ -64,44 +63,12 @@ def analyze(inp, colors_dict):
             result[i, count + 2] = colors_dict[inp[i, idx + 2]]
             idx = idx + 3
             count = count + 3
-        result[i, count] = inp[i, idx]
-        result[i, count + 1] = inp[i, idx + 1]
+        result[i, -5:20] = inp[i, -5:20]
     return result
 
 def decode_onehot(a):
     return np.where(a == 1)[0][0]
 
-def get_named_layers(net):
-    conv2d_idx = 0
-    convT2d_idx = 0
-    linear_idx = 0
-    batchnorm2d_idx = 0
-    named_layers = {}
-    for mod in net.modules():
-        if isinstance(mod, torch.nn.Conv2d):
-            layer_name = 'Conv2d{}_{}-{}'.format(
-                conv2d_idx, mod.in_channels, mod.out_channels
-            )
-            named_layers[layer_name] = mod
-            conv2d_idx += 1
-        elif isinstance(mod, torch.nn.ConvTranspose2d):
-            layer_name = 'ConvT2d{}_{}-{}'.format(
-                conv2d_idx, mod.in_channels, mod.out_channels
-            )
-            named_layers[layer_name] = mod
-            convT2d_idx += 1
-        elif isinstance(mod, torch.nn.BatchNorm2d):
-            layer_name = 'BatchNorm2D{}_{}'.format(
-                batchnorm2d_idx, mod.num_features)
-            named_layers[layer_name] = mod
-            batchnorm2d_idx += 1
-        elif isinstance(mod, torch.nn.Linear):
-            layer_name = 'Linear{}_{}-{}'.format(
-                linear_idx, mod.in_features, mod.out_features
-            )
-            named_layers[layer_name] = mod
-            linear_idx += 1
-    return named_layers
 
 def get_attribute_sem():
     result = []

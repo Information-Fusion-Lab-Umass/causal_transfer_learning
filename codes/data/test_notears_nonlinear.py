@@ -33,7 +33,7 @@ args = parser.parse_args()
 
 vars = ['ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
          'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1',
-         'a_t1', 'ns_t1', 'ax_t2', 'ay_t2']
+         'a_t1', 'r_t1', 'ns_t1', 'ax_t2', 'ay_t2']
 
 plot_dir = "./codes/plots/{}/train_{}/lambda1_{}_lambda2_{}_rho_{}/".format(args.game_type, args.train_frac, args.l1, args.l2, args.rho)
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
@@ -70,6 +70,8 @@ for i in range(4):
     filename = data_dir + "oo_action_{}_{}.npz".format(i, args.game_type)
     f = np.load(filename, mmap_mode='r', allow_pickle=True)
     X_all = f["mat"]
+    print(X_all.shape)
+    print(np.unique(X_all[:,16], return_counts = True))
     c_dict = f["c_dict"][0]
     X_all = X_all.astype("int")
     train_size = int((args.train_frac/100) * X_all.shape[0])
@@ -79,7 +81,7 @@ for i in range(4):
     idx = np.random.choice(idx, size = train_size, replace = False)
     X_train = X_all[idx]
 
-    p = [0,1,2,3,6,9,12,15]
+    p = [0,1,2,5,8,11,14,15,17]
     q = []
 
     for j in range(len(vars)):
