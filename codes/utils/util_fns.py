@@ -21,12 +21,12 @@ def append_cons_ts(data):
 
 def structural_form(data):
     m,n = data.shape
-    m_hat, n_hat = int(m/2), (n+1)
+    m_hat, n_hat = int(m/2), (n+2)
     print(m,n, m_hat, n_hat)
     result = np.zeros((m_hat, n_hat))
     for i in range(m_hat):
-        result[i,0:17] = data[2*i,1:18]
-        result[i,17:19] = data[2*i+1,:2]
+        result[i,0:18] = data[2*i,1:19]
+        result[i,18:20] = data[2*i+1,:2]
     return result
 
 def discretize(inp, colors_dict):

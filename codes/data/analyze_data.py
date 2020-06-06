@@ -52,7 +52,6 @@ print(c_dict)
 for i in range(4):
     action_data = all_data[all_data[:, 16] == i]
     s_form = structural_form(action_data)
-    np.savetxt(data_dir + "oo_s_form_{}.csv".format(i), s_form[:20], delimiter = ",")
     np.savez(data_dir + "oo_action_{}_{}.npz".format(i, args.game_type), mat = s_form, c_dict = [c_dict])
 
 # # # names = ['ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',

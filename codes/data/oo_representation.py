@@ -30,6 +30,7 @@ def get_neighboring_objects(X, action, switch_count):
                 features.append(l)
                 features.append(r)
                 features.append([action])
+                features.append([reward])
                 features.append([switch_count])
             except Exception as e:
                  print(e)
@@ -43,7 +44,7 @@ def get_neighboring_objects(X, action, switch_count):
     Y = np.asarray(Y).astype("float32")
     return Y
 
-def get_oo_repr(t, objects, action, n_colors, n_actions):
+def get_oo_repr(t, objects, action, reward, n_colors, n_actions):
     A = []
     for o in objects:
         if o.name == "switch":
@@ -67,7 +68,7 @@ def get_oo_repr(t, objects, action, n_colors, n_actions):
     X[:, 4] = colors_int
     # X[:, 4: 4+n_colors] = one_hot(colors_int, n_colors)
     # action_ohe = one_hot(np.ones(1, dtype = "int")* int(action), n_actions)
-    nbrs = get_neighboring_objects(X, action, switch_count)
+    nbrs = get_neighboring_objects(X, action, reward, switch_count)
     return nbrs, colors_dict
 
 def one_hot(a, num_classes):

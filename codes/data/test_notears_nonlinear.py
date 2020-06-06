@@ -22,7 +22,7 @@ parser.add_argument('--height', default = 10, type = int, help='Height of the en
 parser.add_argument('--n_data', default = 100, type = int, help='Number of data points')
 parser.add_argument('--mode', default = "eval", choices = ['train', 'eval', 'both'], help ='Train or Evaluate')
 parser.add_argument('--disp', default = False, help = 'True or False')
-parser.add_argument('--game_type', default = "bw", choices = ["bw", "all_random_invert", "all_random", "trigger_non_markov"], help = "Type of game", required = True)
+parser.add_argument('--game_type', default = "bw", choices = ["bw", "all_random_invert", "all_random", "trigger_non_markov", "trigger_non_markov_random"], help = "Type of game", required = True)
 parser.add_argument('--l1', default = 0.01, type = float, help = 'lambda 1: penalty for regularizer')
 parser.add_argument('--l2', default = 0.01, type = float, help = 'lambda2: penalty for regularizer')
 parser.add_argument('--rho', default = 0.0, type = float, help = 'rho: penalty for regularizer for acyclicity')
@@ -31,9 +31,9 @@ parser.add_argument('--train_frac', default = 100, type = float, help = 'fractio
 
 args = parser.parse_args()
 
-vars = ['bias', 'ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
+vars = ['ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
          'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1',
-         'ax_t2', 'ay_t2']
+         'a_t1', 'ns_t1', 'ax_t2', 'ay_t2']
 
 plot_dir = "./codes/plots/{}/train_{}/lambda1_{}_lambda2_{}_rho_{}/".format(args.game_type, args.train_frac, args.l1, args.l2, args.rho)
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
@@ -77,7 +77,6 @@ for i in range(4):
     idx = np.arange(X_all.shape[0])
     np.random.shuffle(idx)
     idx = np.random.choice(idx, size = train_size, replace = False)
-    # X_train = np.squeeze(X_all[idx], axis = 0)
     X_train = X_all[idx]
 
     p = [0,1,2,3,6,9,12,15]
