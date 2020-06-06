@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from codes.utils import *
 import os
 import torch
+import pandas as pd
 
 torch.set_printoptions(precision=3, sci_mode = False)
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -22,7 +23,7 @@ parser.add_argument('--height', default = 10, type = int, help='Height of the en
 parser.add_argument('--n_data', default = 100, type = int, help='Number of data points')
 parser.add_argument('--mode', default = "eval", choices = ['train', 'eval', 'both'], help ='Train or Evaluate')
 parser.add_argument('--disp', default = False, help = 'True or False')
-parser.add_argument('--game_type', default = "bw", choices = ["bw", "all_random_invert", "all_random", "trigger_non_markov", "trigger_non_markov_random"], help = "Type of game", required = True)
+parser.add_argument('--game_type', default = "bw", choices = ["bw", "all_random_invert", "all_random", "trigger_non_markov", "trigger_non_markov_random",  "trigger_non_markov_flip"], help = "Type of game", required = True)
 parser.add_argument('--l1', default = 0.01, type = float, help = 'lambda 1: penalty for regularizer')
 parser.add_argument('--l2', default = 0.01, type = float, help = 'lambda2: penalty for regularizer')
 parser.add_argument('--rho', default = 0.0, type = float, help = 'rho: penalty for regularizer for acyclicity')
@@ -70,8 +71,11 @@ for i in range(4):
     filename = data_dir + "oo_action_{}_{}.npz".format(i, args.game_type)
     f = np.load(filename, mmap_mode='r', allow_pickle=True)
     X_all = f["mat"]
-    print(X_all.shape)
-    print(np.unique(X_all[:,16], return_counts = True))
+
+    df = pd.DataFrame(data=X_all, columns= vars)
+    print(df.groupby(["r_t1", "ns_t1"]).count())
+    print(df["r_t1"].value_counts())
+
     c_dict = f["c_dict"][0]
     X_all = X_all.astype("int")
     train_size = int((args.train_frac/100) * X_all.shape[0])
@@ -109,12 +113,12 @@ for i in range(4):
         Z_torch = torch.from_numpy(Z).type(torch.FloatTensor)
         train_pred = model(X_torch, Z_torch)
         train_loss = squared_loss(train_pred, X_torch)
-        X_eng = analyze(X_torch[1].reshape(1,-1), c_dict)
-        print(len(vars), X_eng.shape, train_pred.shape)
-        print("Train loss {}".format(train_loss.item()))
-        print("============== Action {} ==================".format(actions[i]))
-        for j in range(X_torch.shape[1]):
-            print(vars[j], X_eng[0, j], train_pred[1, j].item())
+        # X_eng = analyze(X_torch[1].reshape(1,-1), c_dict)
+        # print(len(vars), X_eng.shape, train_pred.shape)
+        # print("Train loss {}".format(train_loss.item()))
+        # print("============== Action {} ==================".format(actions[i]))
+        # for j in range(X_torch.shape[1]):
+        #     print(vars[j], X_eng[0, j], train_pred[1, j].item())
 
 
     if args.save_results == 1:

@@ -1,5 +1,5 @@
 import numpy as np
-
+import random
 from skimage.draw import rectangle
 
 def get_all_pos(width, height):
@@ -27,10 +27,14 @@ def basic_maze(width, height, total_switches, total_prizes, random_obstacles, n_
     start = np.random.choice(len(f), size = 1)
     start_idx = [f[i] for i in start]
 
+    coin_flip = random.random()
+    print("coin flip {}".format(coin_flip))
     if random_obstacles:
         frac = 1/n_colors
         obstacle_size = int(frac * N)
         for c in [1,2]:
+            if coin_flip >= 0.5 and c == 1:
+                continue
             f = np.argwhere(x == 0)
             r = np.random.choice(len(f), size = obstacle_size)
             req_pos = [f[i] for i in r]

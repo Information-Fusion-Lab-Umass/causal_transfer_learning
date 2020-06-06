@@ -21,12 +21,12 @@ def append_cons_ts(data):
 
 def structural_form(data):
     m,n = data.shape
-    m_hat, n_hat = int(m/2), (n+1)
+    m_hat, n_hat = int(m/2), (n+2)
     print(m,n, m_hat, n_hat)
     result = np.zeros((m_hat, n_hat))
     for i in range(m_hat):
-        result[i,0:18] = data[2*i,1:19]
-        result[i,18:20] = data[2*i+1,1:3]
+        result[i,:n] = data[2*i,:]
+        result[i,n:n+2] = data[2*i+1,:2]
     return result
 
 def discretize(inp, colors_dict):
@@ -60,7 +60,7 @@ def analyze(inp, colors_dict):
             result[i, count] = inp[i, idx]
             result[i, count + 1] = inp[i, idx + 1]
             # color_ohe = decode_onehot(inp[i,idx + 2: idx + 2 + n_colors])
-            result[i, count + 2] = colors_dict[inp[i, idx + 2]]
+            result[i, count + 2] = colors_dict[int(inp[i, idx + 2])]
             idx = idx + 3
             count = count + 3
         result[i, -5:20] = inp[i, -5:20]
