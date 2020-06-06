@@ -1,6 +1,12 @@
 import numpy as np
 
 colors_dict = {'white': 3, 'black': 0, 'green': 1, 'red': 2, 'yellow': 4}
+actions = {
+0: "up",
+1: "down",
+2: "left",
+3: "right",
+}
 def get_neighboring_objects(X, action, reward, switch_count):
     Y = []
     idx = 1

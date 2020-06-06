@@ -49,7 +49,7 @@ def discretize(inp):
         result[i, -1] = decode_onehot(inp[i, -4:])
     return result
 
-def analyze(inp, colors_dict):
+def analyze(inp):
     n_colors = len(colors_dict)
     if not isinstance(inp, np.ndarray):
         inp = inp.detach().numpy()

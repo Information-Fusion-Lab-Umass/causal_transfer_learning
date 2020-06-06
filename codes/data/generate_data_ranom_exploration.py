@@ -70,7 +70,7 @@ def main():
                 colors = np.unique(np.array(colors))
                 n_colors = len(colors)
             action = random.randrange(n_actions)
-            X = get_oo_repr(count, curr_objects, action, reward, n_colors, n_actions)
+            X = get_oo_repr(count, curr_objects, action, 0, n_colors, n_actions)
             inp.append(X)
             # next state
             next_obs, reward, done, info = env.step(action)
@@ -80,7 +80,7 @@ def main():
                 env.render('human')
                 time.sleep(0.1)
             X = get_oo_repr(count, next_objects, action, reward, n_colors, n_actions)
-        
+
             inp.append(X)
             count = count + 1
             curr_objects = next_objects
