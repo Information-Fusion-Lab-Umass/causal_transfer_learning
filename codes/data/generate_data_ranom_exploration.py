@@ -70,7 +70,7 @@ def main():
                 colors = np.unique(np.array(colors))
                 n_colors = len(colors)
             action = random.randrange(n_actions)
-            X, colors_dict = get_oo_repr(count, curr_objects, action, reward, n_colors, n_actions)
+            X = get_oo_repr(count, curr_objects, action, reward, n_colors, n_actions)
             inp.append(X)
             # next state
             next_obs, reward, done, info = env.step(action)
@@ -79,13 +79,8 @@ def main():
             if args.render == 1:
                 env.render('human')
                 time.sleep(0.1)
-            X, colors_dict = get_oo_repr(count, next_objects, action, reward, n_colors, n_actions)
-            # if(len(next_objects.prize.positions) == len(curr_objects.prize.positions) - 1):
-            #     print("Prize disappeared")
-            #     print("action {}".format(actions[action]))
-            #     print("X {}".format(X, curr_obs, next_obs))
-            #     print("curr_obs {}".format(curr_obs))
-            #     print("next_obs {}".format(next_obs))
+            X = get_oo_repr(count, next_objects, action, reward, n_colors, n_actions)
+        
             inp.append(X)
             count = count + 1
             curr_objects = next_objects
@@ -95,7 +90,7 @@ def main():
     env.close()
     inp = np.array(inp).squeeze(axis = 1)
     #['time_stamp', 'a_x', 'a_y', 'a_c', 'u', 'd', 'l', 'r', 'a', 'reward', 'num_switches']
-    np.savez(data_dir + "oo_transition_matrix_{}.npz".format(args.height), mat = inp, c_dict = [colors_dict])
+    np.savez(data_dir + "oo_transition_matrix_{}.npz".format(args.height), mat = inp)
 
 if __name__ == "__main__":
     main()

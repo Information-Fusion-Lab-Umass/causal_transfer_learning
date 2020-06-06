@@ -8,6 +8,7 @@ actions = {
 2: "left",
 3: "right"
 }
+colors_dict = {3:'white', 0:'black', 1:'green', 2:'red', 4:'yellow'}
 
 def append_cons_ts(data):
     m,n = data.shape
@@ -30,9 +31,8 @@ def structural_form(data):
         result[i,16] = data[2*i+1,16] # r_t1 for next round
     return result
 
-def discretize(inp, colors_dict):
+def discretize(inp):
     n_colors = len(colors_dict)
-    print(colors_dict)
     if not isinstance(inp, np.ndarray):
         inp = inp.detach().numpy()
     result = np.zeros((inp.shape[0], 16))
@@ -60,7 +60,6 @@ def analyze(inp, colors_dict):
         for j in range(5):
             result[i, count] = inp[i, idx]
             result[i, count + 1] = inp[i, idx + 1]
-            # color_ohe = decode_onehot(inp[i,idx + 2: idx + 2 + n_colors])
             result[i, count + 2] = colors_dict[int(inp[i, idx + 2])]
             idx = idx + 3
             count = count + 3

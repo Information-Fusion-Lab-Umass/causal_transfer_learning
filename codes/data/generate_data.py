@@ -60,7 +60,7 @@ def main():
                 colors = np.unique(np.array(colors))
                 n_colors = len(colors)
             action = j
-            X, colors_dict = get_oo_repr(count, curr_objects, action, reward, n_colors, n_actions)
+            X = get_oo_repr(count, curr_objects, action, reward, n_colors, n_actions)
             if inp is None:
                 N, M = X.shape
                 inp = np.zeros((8*n_pos, N, M))
@@ -74,15 +74,14 @@ def main():
             if args.render == 1:
                 env.render('human')
                 time.sleep(0.1)
-            X, colors_dict = get_oo_repr(count, next_objects, action, reward, n_colors, n_actions)
+            X = get_oo_repr(count, next_objects, action, reward, n_colors, n_actions)
             inp[count, :, :] = X
             count = count + 1
             if done:
                 break
         env.close()
-        print(inp.shape)
-        print(inp)
-    np.savez(data_dir + "oo_transition_matrix_{}.npz".format(args.height), mat = inp, c_dict = [colors_dict])
+        
+    np.savez(data_dir + "oo_transition_matrix_{}.npz".format(args.height), mat = inp)
 
 if __name__ == "__main__":
     main()

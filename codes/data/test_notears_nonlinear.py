@@ -16,7 +16,7 @@ actions = {
 2: "left",
 3: "right",
 }
-
+colors_dict = {'white': 3, 'black': 0, 'green': 1, 'red': 2, 'yellow': 4}
 
 parser = argparse.ArgumentParser("Arguments for environment generation for causal concept understanding")
 parser.add_argument('--height', default = 10, type = int, help='Height of the environment')
@@ -74,12 +74,9 @@ for i in range(4):
     X_all[X_all[:,17] > 0, 17] = 1
 
     df = pd.DataFrame(data=X_all, columns= vars)
-    print(df.groupby(["r_t1", "ns_t1"]).count())
-    print(df["r_t1"].value_counts())
+    # print(df.groupby(["r_t1", "ns_t1"]).count())
+    # print(df["r_t1"].value_counts())
 
-    c_dict = f["c_dict"][0]
-    c_dict = {3: 'white', 0: 'black', 1: 'green', 2: 'red', 4: 'yellow'}
-    print(c_dict)
     X_all = X_all.astype("int")
     train_size = int((args.train_frac/100) * X_all.shape[0])
     print("============= Train Percentage {} Train Data {}============".format(args.train_frac, train_size))
@@ -89,7 +86,7 @@ for i in range(4):
     X_train = X_all[idx]
     r_idx = X_train[:,16] > 0
     check = np.arange(X_train.shape[0])[r_idx]
-    print(check)
+
     p = [0,1,2,5,8,11,14,15,17]
     q = []
 
@@ -118,7 +115,7 @@ for i in range(4):
         Z_torch = torch.from_numpy(Z).type(torch.FloatTensor)
         train_pred = model(X_torch, Z_torch)
         train_loss = squared_loss(train_pred, X_torch)
-        X_eng = analyze(X_torch[check[0]].reshape(1,-1), c_dict)
+        X_eng = analyze(X_torch[check[0]].reshape(1,-1))
         print(len(vars), X_eng.shape, train_pred.shape)
         print("Train loss {}".format(train_loss.item()))
         print("============== Action {} ==================".format(actions[i]))

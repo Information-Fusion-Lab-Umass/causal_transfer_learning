@@ -1,5 +1,6 @@
 import numpy as np
 
+colors_dict = {'white': 3, 'black': 0, 'green': 1, 'red': 2, 'yellow': 4}
 def get_neighboring_objects(X, action, reward, switch_count):
     Y = []
     idx = 1
@@ -44,6 +45,12 @@ def get_neighboring_objects(X, action, reward, switch_count):
     Y = np.asarray(Y).astype("float32")
     return Y
 
+def get_colors(colors):
+    colors_int = np.zeros_like(colors)
+    for i in range(colors.shape[0]):
+        colors_int[i] = colors_dict[colors[i]]
+    return colors_int
+
 def get_oo_repr(t, objects, action, reward, n_colors, n_actions):
     A = []
     for o in objects:
@@ -55,10 +62,8 @@ def get_oo_repr(t, objects, action, reward, n_colors, n_actions):
     # print(" Time {} OO Objects {}".format(t, objects))
     A = np.asarray(A)
     colors = A[:,0]
-    uniq_colors, colors_int = np.unique(colors, return_inverse=True)
-    colors_dict = {}
-    for i in range(len(colors)):
-        colors_dict[colors_int[i]] = colors[i]
+    colors_int = get_colors(colors)
+
     X = np.zeros((A.shape[0], 5), dtype=np.dtype('a16'))
 
     X[:, 0] = colors
@@ -66,10 +71,9 @@ def get_oo_repr(t, objects, action, reward, n_colors, n_actions):
     X[:, 2] = A[:, 1]
     X[:, 3] = A[:, 2]
     X[:, 4] = colors_int
-    # X[:, 4: 4+n_colors] = one_hot(colors_int, n_colors)
-    # action_ohe = one_hot(np.ones(1, dtype = "int")* int(action), n_actions)
+
     nbrs = get_neighboring_objects(X, action, reward, switch_count)
-    return nbrs, colors_dict
+    return nbrs
 
 def one_hot(a, num_classes):
     return np.squeeze(np.eye(num_classes)[a.reshape(-1)])

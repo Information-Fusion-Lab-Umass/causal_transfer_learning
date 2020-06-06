@@ -31,7 +31,6 @@ for i in range(args.start, args.stop, 5):
     filename = data_dir + "oo_transition_matrix_{}.npz".format(i)
     f = np.load(filename, mmap_mode='r', allow_pickle=True)
     inp = f["mat"]
-    c_dict = f["c_dict"][0]
     sum = sum + inp.shape[0]
     # result = analyze(inp[:,1:], c_dict)
     if all_data is None:
@@ -39,24 +38,19 @@ for i in range(args.start, args.stop, 5):
     else:
         all_data = np.concatenate((all_data, inp), axis=0)
 
-# discrete = discretize(all_data[:,1:], c_dict)
-# result = append_cons_ts(discrete)
-# result = result.astype("int")
-#
+
 names = ['t_1','ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
           'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1', 'a_t1', 'r_t1', 'num_s_t1']
 
 df = pd.DataFrame(all_data, columns = names)
 print(df.groupby(["r_t1", "num_s_t1"]).count())
 
+r_idx = all_data[:,17] > 0
+check = np.arange(all_data.shape[0])[r_idx]
+print(all_data[check[0:2]])
+p = [0,1,2,5,8,11,14,15,17]
 
-for i in range(4):
-    action_data = all_data[all_data[:, 16] == i]
-    s_form = structural_form(action_data[:, 1:])
-    np.savez(data_dir + "oo_action_{}_{}.npz".format(i, args.game_type), mat = s_form, c_dict = [c_dict])
-
-# # # names = ['ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
-# # 'dy_t1', 'dc_t1', 'rx_t1', 'ry_t1', 'rc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'a_t1',
-# # 'ax_t2', 'ay_t2', 'ac_t2', 'ux_t2', 'uy_t2', 'uc_t2', 'dx_t2',
-# # 'dy_t2', 'dc_t2', 'rx_t2', 'ry_t2', 'rc_t2', 'lx_t2', 'ly_t2', 'lc_t2', 'a_t2']
-#
+# for i in range(4):
+#     action_data = all_data[all_data[:, 16] == i]
+#     s_form = structural_form(action_data[:, 1:])
+#     np.savez(data_dir + "oo_action_{}_{}.npz".format(i, args.game_type), mat = s_form)
