@@ -49,6 +49,7 @@ names = ['t_1','ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
 df = pd.DataFrame(all_data, columns = names)
 print(df.groupby(["r_t1", "num_s_t1"]).count())
 
+
 for i in range(4):
     action_data = all_data[all_data[:, 16] == i]
     s_form = structural_form(action_data[:, 1:])

@@ -71,12 +71,15 @@ for i in range(4):
     filename = data_dir + "oo_action_{}_{}.npz".format(i, args.game_type)
     f = np.load(filename, mmap_mode='r', allow_pickle=True)
     X_all = f["mat"]
+    X_all[X_all[:,17] > 0, 17] = 1
 
     df = pd.DataFrame(data=X_all, columns= vars)
     print(df.groupby(["r_t1", "ns_t1"]).count())
     print(df["r_t1"].value_counts())
 
     c_dict = f["c_dict"][0]
+    c_dict = {3: 'white', 0: 'black', 1: 'green', 2: 'red', 4: 'yellow'}
+    print(c_dict)
     X_all = X_all.astype("int")
     train_size = int((args.train_frac/100) * X_all.shape[0])
     print("============= Train Percentage {} Train Data {}============".format(args.train_frac, train_size))
@@ -84,7 +87,9 @@ for i in range(4):
     np.random.shuffle(idx)
     idx = np.random.choice(idx, size = train_size, replace = False)
     X_train = X_all[idx]
-
+    r_idx = X_train[:,16] > 0
+    check = np.arange(X_train.shape[0])[r_idx]
+    print(check)
     p = [0,1,2,5,8,11,14,15,17]
     q = []
 
@@ -113,12 +118,12 @@ for i in range(4):
         Z_torch = torch.from_numpy(Z).type(torch.FloatTensor)
         train_pred = model(X_torch, Z_torch)
         train_loss = squared_loss(train_pred, X_torch)
-        # X_eng = analyze(X_torch[1].reshape(1,-1), c_dict)
-        # print(len(vars), X_eng.shape, train_pred.shape)
-        # print("Train loss {}".format(train_loss.item()))
-        # print("============== Action {} ==================".format(actions[i]))
-        # for j in range(X_torch.shape[1]):
-        #     print(vars[j], X_eng[0, j], train_pred[1, j].item())
+        X_eng = analyze(X_torch[check[0]].reshape(1,-1), c_dict)
+        print(len(vars), X_eng.shape, train_pred.shape)
+        print("Train loss {}".format(train_loss.item()))
+        print("============== Action {} ==================".format(actions[i]))
+        for j in range(X_torch.shape[1]):
+            print(vars[j], X_eng[0, j], train_pred[check[0], j].item())
 
 
     if args.save_results == 1:

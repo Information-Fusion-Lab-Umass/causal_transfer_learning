@@ -27,6 +27,7 @@ def structural_form(data):
     for i in range(m_hat):
         result[i,:n] = data[2*i,:]
         result[i,n:n+2] = data[2*i+1,:2]
+        result[i,16] = data[2*i+1,16] # r_t1 for next round
     return result
 
 def discretize(inp, colors_dict):
