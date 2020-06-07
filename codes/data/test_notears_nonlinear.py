@@ -35,9 +35,9 @@ args = parser.parse_args()
 s_vars = ['ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
          'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1',
          'a_t1', 'r_t1', 'ns_t1', 'ax_t2', 'ay_t2']
-vars = [r'\textit{agent.x^{t}}', r'\textit{agent.y^{t}}', r'\textit{agent.c^{t}}', r'\textit{up.x^{t}}', r'\textit{up.y^{t}}', r'\textit{up.c^{t}}', r'\textit{down.x^{t}}',
-         r'\textit{down.y^{t}}', r'\textit{down.c^{t}}', r'\textit{left.x^{t}}', r'\textit{left.y^{t}}', r'\textit{left.c^{t}}', r'\textit{rightt.x^{t}}', r'\textit{right.y^{t}}',
-         r'\textit{right.c^{t}}', r'\textit{reward^{t+1}}', r'\textit{numkeys^{t}}', r'\textit{agent.x^{t+1}}', r'\textit{agent.y^{t+1}}']
+vars = [r'\textit{$agent.x^{t}$}', r'\textit{$agent.y^{t}$}', r'\textit{$agent.c^{t}$}', r'\textit{$up.x^{t}$}', r'\textit{$up.y^{t}$}', r'\textit{$up.c^{t}$}', r'\textit{$down.x^{t}$}',
+         r'\textit{$down.y^{t}$}', r'\textit{$down.c^{t}$}', r'\textit{$left.x^{t}$}', r'\textit{$left.y^{t}$}', r'\textit{$left.c^{t}$}', r'\textit{$right.x^{t}$}', r'\textit{$right.y^{t}$}',
+         r'\textit{$right.c^{t}$}', r'\textit{$reward^{t+1}$}', r'\textit{$num\_keys^{t}$}', r'\textit{$agent.x^{t+1}$}', r'\textit{$agent.y^{t+1}$}']
 
 plot_dir = "./codes/plots/{}/train_{}/lambda1_{}_lambda2_{}_rho_{}/".format(args.game_type, args.train_frac, args.l1, args.l2, args.rho)
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
@@ -58,8 +58,6 @@ def plot_graph(W, action, type):
     g.es['weight'] = W[W.nonzero()]
     g.vs['label'] = vars
     g.es['label'] = list(map("{:.2f}".format, W[W.nonzero()]))
-
-
     visual_style = {}
     # layout = g.layout('kk')
     visual_style["vertex_label_dist"] = 3
@@ -78,8 +76,8 @@ for i in range(4):
     X_all[X_all[:,16] > 0, 16] = 1
 
     df = pd.DataFrame(data=X_all, columns= vars)
-    print(df.groupby([r'\textit{reward^{t+1}}', r'\textit{numkeys^{t}}']).count())
-    print(df[r'\textit{reward^{t+1}}'].value_counts())
+    print(df.groupby([r'\textit{$reward^{t+1}$}', r'\textit{$num\_keys^{t}$}']).count())
+    print(df[r'\textit{$reward^{t+1}$}'].value_counts())
 
     X_all = X_all.astype("int")
     train_size = int((args.train_frac/100) * X_all.shape[0])
@@ -130,7 +128,7 @@ for i in range(4):
     if args.save_results == 1:
         W = model.fc1_to_adj()
         true_plot_name = plot_dir + "w_true_{}".format(actions[i])
-        est_plot_name = plot_dir + "w_est_{}".format(actions[i])
+        est_plot_name = plot_dir + "w_est_{}.pdf".format(actions[i])
 
         x_indices = q
         y_indices = p
@@ -138,4 +136,4 @@ for i in range(4):
         x_label = [vars[k] for k in q]
 
         # plot_weight_sem(W_true, true_plot_name, x_indices, y_indices, x_label, y_label)
-        plot_weight_sem(W, est_plot_name, x_indices, y_indices, x_label, y_label)
+        plot_weight_sem(W, est_plot_name, x_indices, y_indices, x_label, y_label, actions[i])

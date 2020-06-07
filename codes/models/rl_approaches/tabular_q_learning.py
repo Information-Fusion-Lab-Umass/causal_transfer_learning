@@ -106,12 +106,12 @@ if __name__ == '__main__':
     if args.env == "target":
         invert = True
 
-    switch_positions = []
-    prize_positions = [[8,6], [5,5]]
-    x = basic_maze(width = args.width, height = args.height, switch_positions = switch_positions, prize_positions = prize_positions, random_obstacles = args.random_obstacles)
-    start_idx = [[8, 1]]
-    env_id = 'TriggerGame-v0'
-    gym.envs.register(id = env_id, entry_point = SourceEnv, max_episode_steps = 1000)
+    # switch_positions = []
+    # prize_positions = [[8,6], [5,5]]
+    # x = basic_maze(width = args.width, height = args.height, switch_positions = switch_positions, prize_positions = prize_positions, random_obstacles = args.random_obstacles)
+    # start_idx = [[8, 1]]
+    # env_id = 'TriggerGame-v0'
+    # gym.envs.register(id = env_id, entry_point = SourceEnv, max_episode_steps = 1000)
 
     if args.mode in ["train", "both"]:
         q_learning(x, start_idx, env_id, args.height, args.width, args.n_trials, args.n_episodes, args.n_len,
@@ -120,4 +120,4 @@ if __name__ == '__main__':
         q_rewards = np.load(plot_dir + "q_rewards_markov.npz")
         q_values = q_rewards["q"]
         rewards = q_rewards["r"]
-        plot_rewards(rewards, plot_dir + "q_learning_rewards_{}G.png".format(len(prize_positions)), std_error = True)
+        plot_rewards(rewards, plot_dir + "q_learning_rewards_{}G.pdf".format(2), std_error = True)

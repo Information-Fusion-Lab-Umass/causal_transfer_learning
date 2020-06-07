@@ -119,11 +119,11 @@ def plot_weight(w, plot_name, dir):
     #         text = ax.text(i, j, "{:.0f}".format(w[i,j]),
     #                        ha="center", va="center")
 
-    ax.set_title("Weight values")
+    ax.set_title("L2-Norm of Weight values r'\Vert{\Theta_j(X)}$'")
     plt.savefig(plot_name)
 
 
-def plot_weight_sem(w, plot_name, x_indices, y_indices, x_label, y_label):
+def plot_weight_sem(w, plot_name, x_indices, y_indices, x_label, y_label,action):
     m, n = len(x_indices), len(y_indices)
     W = np.zeros((n, m))
 
@@ -131,17 +131,24 @@ def plot_weight_sem(w, plot_name, x_indices, y_indices, x_label, y_label):
         for j in range(m):
             W[i,j] = w[y_indices[i], x_indices[j]]
 
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
     fig, ax = plt.subplots()
 
-    ax.matshow(abs(W), cmap=plt.cm.Blues)
+    cax = ax.matshow(abs(W), cmap=plt.cm.Blues)
     ax.tick_params(axis="x", bottom=True, rotation = (45), top=False, labelbottom=True, labeltop=False, pad = 20)
     ax.tick_params(axis="y", left = True, rotation = (45), right = False, labelleft = True, labelright = False, pad = 20)
     # We want to show all ticks...
     ax.set_xticks(np.arange(len(x_label)))
     ax.set_yticks(np.arange(len(y_label)))
     # ... and label them with the respective list entries
-    ax.set_xticklabels(x_label, va="center")
-    ax.set_yticklabels(y_label, va="center")
+    ax.set_xticklabels(x_label, va="center", fontsize=11)
+    ax.set_yticklabels(y_label, va="center", fontsize=11)
+    y_label = r'$Pa(X_j)$'
+    x_label = r'${X_j}$'
+    plt.xlabel("{}".format(x_label), fontsize=13)
+    plt.ylabel("{}".format(y_label), fontsize=13)
+    fig.colorbar(cax)
 
     # # Rotate the tick labels and set their alignment.
     # plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
@@ -150,13 +157,16 @@ def plot_weight_sem(w, plot_name, x_indices, y_indices, x_label, y_label):
     # Loop over data dimensions and create text annotations.
     for i in range(m):
         for j in range(n):
-            if W[j,i] != 0:
-                t = "{:.1f}".format(W[j,i])
+            if W[j,i] >= 0.05:
+                t = "{:.2f}".format(W[j,i])
+                # t = ""
             else:
                 t = ""
             text = ax.text(i, j,t ,
-                           ha="center", va="center", color="w")
+                           ha="center", va="center", color="black", fontweight='bold')
 
-    ax.set_title("Weight values")
+    text = r'$\Vert{\Theta_{j}(X)}\Vert_{L_2}$'
+    l2 = r'$L_2$'
+    # ax.set_title("{}-Norm of Weight values {}\n (Action: {})".format(l2, text, str.upper(action)), wrap = True, loc = 'center')
     fig.tight_layout()
     plt.savefig(plot_name)
