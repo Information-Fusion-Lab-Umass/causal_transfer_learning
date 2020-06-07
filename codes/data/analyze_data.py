@@ -38,7 +38,7 @@ for i in range(args.start, args.stop, 5):
     else:
         all_data = np.concatenate((all_data, inp), axis=0)
 
-print(all_data[:8])
+print(all_data[:-8])
 names = ['t_1','ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
           'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1', 'a_t1', 'r_t1', 'num_s_t1']
 
@@ -50,7 +50,7 @@ names = ['t_1','ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
 # print(all_data[check[0:4]])
 # p = [0,1,2,5,8,11,14,15,17]
 
-# for i in range(4):
-#     action_data = all_data[all_data[:, 16] == i]
-#     s_form = structural_form(action_data[:, 1:])
-#     np.savez(data_dir + "oo_action_{}_{}.npz".format(i, args.game_type), mat = s_form)
+for i in range(4):
+    action_data = all_data[all_data[:, 16] == i]
+    s_form = structural_form(action_data[:, 1:])
+    np.savez(data_dir + "oo_action_{}_{}.npz".format(i, args.game_type), mat = s_form)

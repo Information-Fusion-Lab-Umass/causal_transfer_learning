@@ -32,9 +32,12 @@ parser.add_argument('--train_frac', default = 100, type = float, help = 'fractio
 
 args = parser.parse_args()
 
-vars = ['ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
+s_vars = ['ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
          'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1',
          'a_t1', 'r_t1', 'ns_t1', 'ax_t2', 'ay_t2']
+vars = [r'\textit{agent.x^{t}}', r'\textit{agent.y^{t}}', r'\textit{agent.c^{t}}', r'\textit{up.x^{t}}', r'\textit{up.y^{t}}', r'\textit{up.c^{t}}', r'\textit{down.x^{t}}',
+         r'\textit{down.y^{t}}', r'\textit{down.c^{t}}', r'\textit{left.x^{t}}', r'\textit{left.y^{t}}', r'\textit{left.c^{t}}', r'\textit{rightt.x^{t}}', r'\textit{right.y^{t}}',
+         r'\textit{right.c^{t}}', r'\textit{reward^{t+1}}', r'\textit{numkeys^{t}}', r'\textit{agent.x^{t+1}}', r'\textit{agent.y^{t+1}}']
 
 plot_dir = "./codes/plots/{}/train_{}/lambda1_{}_lambda2_{}_rho_{}/".format(args.game_type, args.train_frac, args.l1, args.l2, args.rho)
 data_dir = "./codes/data/mat/{}/matrices/".format(args.game_type)
@@ -71,11 +74,12 @@ for i in range(4):
     filename = data_dir + "oo_action_{}_{}.npz".format(i, args.game_type)
     f = np.load(filename, mmap_mode='r', allow_pickle=True)
     X_all = f["mat"]
-    X_all[X_all[:,17] > 0, 17] = 1
+    X_all = np.delete(X_all, 15, axis = 1)
+    X_all[X_all[:,16] > 0, 16] = 1
 
     df = pd.DataFrame(data=X_all, columns= vars)
-    # print(df.groupby(["r_t1", "ns_t1"]).count())
-    # print(df["r_t1"].value_counts())
+    print(df.groupby([r'\textit{reward^{t+1}}', r'\textit{numkeys^{t}}']).count())
+    print(df[r'\textit{reward^{t+1}}'].value_counts())
 
     X_all = X_all.astype("int")
     train_size = int((args.train_frac/100) * X_all.shape[0])
@@ -84,10 +88,10 @@ for i in range(4):
     np.random.shuffle(idx)
     idx = np.random.choice(idx, size = train_size, replace = False)
     X_train = X_all[idx]
-    r_idx = X_train[:,16] > 0
+    r_idx = X_train[:,15] < 0
     check = np.arange(X_train.shape[0])[r_idx]
 
-    p = [0,1,2,5,8,11,14,15,17]
+    p = [0,1,2,5,8,11,14,16]
     q = []
 
     for j in range(len(vars)):
