@@ -9,10 +9,11 @@ class DQN(nn.Module):
         super(DQN, self).__init__()
         self.action_space = args.action_space
         self.hidden_size = args.hidden_size
-        self.w = args.w
-        self.h = args.h
-        self.input_channels = args.input_channels
-        self.p = 0
+        self.input_size = args.input_size
+        # self.w = args.w
+        # self.h = args.h
+        # self.input_channels = args.input_channels
+        # self.p = 0
 
         # self.conv1 = nn.Conv2d(3, 16, kernel_size=5, stride=2)
         # self.bn1 = nn.BatchNorm2d(16)

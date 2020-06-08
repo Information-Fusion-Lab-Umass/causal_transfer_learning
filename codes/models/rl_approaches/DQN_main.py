@@ -22,6 +22,7 @@ from model_utils import *
 import logging
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from codes.data.oo_representation import *
 
 # Arguments
 parser = argparse.ArgumentParser(description="causality")
@@ -70,6 +71,7 @@ if not os.path.exists(plot_dir):
 
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
+env_id = 'TriggerGame-v0'
 
 format = "%(asctime)s.%(msecs)03d: - %(levelname)s: %(message)s"
 logging.basicConfig(format=format, level=logging.INFO,
@@ -85,6 +87,10 @@ if args.env == "source":
 
 if args.env == "target":
     invert = True
+
+heights = np.arange(5,80, 5)
+gym.envs.register(id = env_id, entry_point = SourceEnv, max_episode_steps = 1000)
+
 
 
 def preprocess_image(image, device):
@@ -110,6 +116,32 @@ def select_action(policy_net, state, args, eval_mode = False):
         action = random.randrange(args.action_space)
     return action, eps_threshold
 
+def make_env(args):
+    height = np.random.choice(heights)
+    if args.no_switches:
+        total_switches = 0
+    else:
+        total_switches = 2
+
+    total_prizes = 2
+    x, start_idx = basic_maze(width = height, height = height, total_switches = total_switches, total_prizes = total_prizes, random_obstacles = args.random_obstacles)
+
+    env = gym.make(env_id, x = copy(x), start_idx = start_idx, invert = invert, return_image = True, logger = logger)
+    n_actions = env.action_space.n
+    empty_positions = env.maze.objects.free.positions
+    switch_positions = env.maze.objects.switch.positions
+    prize_positions = env.maze.objects.prize.positions
+    initial_positions = {"free": empty_positions, "switch": switch_positions, "prize": prize_positions}
+
+    env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = False, logger = logger)
+    curr_obs = env.reset()
+    curr_objects = env.maze.objects
+    X = get_oo_repr(0, curr_objects, 0, 0, n_actions)
+    curr_state = X[:, indices]
+    curr_state = torch.tensor(curr_state, device = args.device, dtype = torch.float32).reshape(1,-1)
+
+    return env, curr_state
+
 args = parser.parse_args()
 logger.info(' ' * 26 + 'Options')
 for k, v in vars(args).items():
@@ -122,51 +154,26 @@ if torch.cuda.is_available() and not args.disable_cuda:
 else:
      args.device = torch.device('cpu')
 
-
 logger.info("Running on {}".format(args.device))
 
-# Env
-if args.no_switches:
-    switch_positions = []
-else:
-    switch_positions = [[7,1],[3,2]]
-prize_positions = [[2,2],[8,6]]
-logger.info("Switch Positions {}, Prize positions {}".format(switch_positions, prize_positions))
+env, curr_state = make_env(args)
+n_actions = env.action_space.n
 
-x = basic_maze(width = args.width, height = args.height, switch_positions = switch_positions, prize_positions = prize_positions, random_obstacles = args.random_obstacles)
-start_idx = [[8, 1]]
-env_id = 'TriggerGame-v0'
-gym.envs.register(id = env_id, entry_point = SourceEnv, max_episode_steps = 1000)
-
-
-# max_length = 1
-# history_length = 4
-env = gym.make(env_id, x = copy(x), start_idx = start_idx, invert = invert, return_image = True, logger = logger)
-empty_positions = env.maze.objects.free.positions
-switch_positions = env.maze.objects.switch.positions
-prize_positions = env.maze.objects.prize.positions
-initial_positions = {"free": empty_positions, "switch": switch_positions, "prize": prize_positions}
-
-env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = False, logger = logger)
-curr_obs = env.reset()
-curr_objects = env.maze.objects
-X = get_oo_repr(0, curr_objects, 0, 0, n_actions)
-curr_state = X[:, indices]
-curr_state = torch.tensor(curr_state, device = args.device, dtype = torch.float32).reshape(1,-1)
-
-# plt.imshow(state.detach().numpy().transpose(1,2,0))
-# plt.show()
-# plt.close()
-
-screen_height = state.shape[1]
-screen_width = state.shape[2]
-input_channels = args.history_length * state.shape[0]
-
-args.w = screen_width
-args.h = screen_height
-args.input_channels = input_channels
+# # plt.imshow(state.detach().numpy().transpose(1,2,0))
+# # plt.show()
+# # plt.close()
+#
+# screen_height = state.shape[1]
+# screen_width = state.shape[2]
+# input_channels = args.history_length * state.shape[0]
+#
+# args.w = screen_width
+# args.h = screen_height
+# args.input_channels = input_channels
 
 ############################ Training #########################################################
+
+args.input_size = len(indices)
 all_rewards = []
 if args.mode in ["train", "both"]:
     for trial in tqdm(range(args.num_trials)):
@@ -179,7 +186,6 @@ if args.mode in ["train", "both"]:
         memory = ReplayMemory(args.memory_size)
         loss_vector = np.zeros(args.total_steps - args.burning + 1)
         reward_vector = []
-
         # Collect random data for initial burning period of 5000
         steps_done = 0
         total_rewards = 0
@@ -190,10 +196,10 @@ if args.mode in ["train", "both"]:
         discount_factor = 1
         for i_episode in tqdm(range(args.total_steps)):
             count = count + 1
-            action, eps_threshold = select_action(policy_net, state, args)
+            action, eps_threshold = select_action(policy_net, curr_state, args)
             next_obs, reward, done, info = env.step(action)
             next_objects = env.maze.objects
-            X = get_oo_repr(count, next_objects, action, reward, n_colors, n_actions)
+            X = get_oo_repr(count, next_objects, action, reward,n_actions)
             next_state = X[:,indices]
 
             total_rewards = total_rewards + discount_factor*reward
@@ -204,14 +210,14 @@ if args.mode in ["train", "both"]:
             # Store the transition in memory
 
             if steps_done >= args.start_learn_thresh:
-                loss = optimize_model(optimizer, policy_net, target_net, memory, args.batch_size, args.device, args.h, args.w, args.input_channels, args.gamma)
+                loss = optimize_model(optimizer, policy_net, target_net, memory, args.batch_size, args.device, args.gamma)
                 loss_vector[steps_done - args.burning] = loss.item()
                 #logger.info("Step {} average Q-learning loss {:.4f}".format(steps_done, loss.item()))
             if done:
                 #logger.info("Winning Reward {}".format(reward))
                 logger.info("Won the game: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
                 memory.push(curr_state, action, reward, None)
-                env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
+                env, curr_state = make_env(args)
                 curr_obs = env.reset()
                 curr_objects = env.maze.objects
                 X = get_oo_repr(0, curr_objects, 0, 0, n_actions)
@@ -225,7 +231,7 @@ if args.mode in ["train", "both"]:
                 memory.push(curr_state, action, reward, next_state)
                 if count >= args.max_episode_length:
                     logger.info("Terminating episode: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
-                    env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
+                    env, curr_state = make_env(args)
                     curr_obs = env.reset()
                     curr_objects = env.maze.objects
                     X = get_oo_repr(0, curr_objects, 0, 0, n_actions)

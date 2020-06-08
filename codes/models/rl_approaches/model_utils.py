@@ -26,7 +26,7 @@ def plot_rewards(rewards, plot_name, std_error = False):
     plt.legend()
     plt.savefig(plot_name)
 
-def optimize_model(optimizer, policy_net, target_net, memory, BATCH_SIZE, device, height, width, input_channels, GAMMA = 1.0):
+def optimize_model(optimizer, policy_net, target_net, memory, BATCH_SIZE, device, GAMMA = 1.0):
     if len(memory) < BATCH_SIZE:
         return
     transitions = memory.sample(BATCH_SIZE)
@@ -41,8 +41,8 @@ def optimize_model(optimizer, policy_net, target_net, memory, BATCH_SIZE, device
     non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
                                           batch.next_state)), device=device, dtype=torch.bool)
     non_final_next_states = torch.cat([s for s in batch.next_state
-                                                if s is not None]).reshape(-1, input_channels, height, width)
-    state_batch = torch.cat(batch.state).reshape(BATCH_SIZE, input_channels, height, width)
+                                                if s is not None])
+    state_batch = torch.cat(batch.state).reshape(BATCH_SIZE, -1)
     action_batch = torch.cat(batch.action)
     reward_batch = torch.cat(batch.reward)
 
@@ -63,6 +63,7 @@ def optimize_model(optimizer, policy_net, target_net, memory, BATCH_SIZE, device
     next_state_values[non_final_mask] = next_q_a.max(1)[0].detach()
 
     next_state_values = next_state_values.reshape(BATCH_SIZE, 1)
+
     # Compute the expected Q values
     expected_state_action_values = (next_state_values * GAMMA) + reward_batch
 
