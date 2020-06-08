@@ -50,7 +50,7 @@ actions = {
 vars = ['ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
          'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1','r_t1', 'ns_t1']
 
-p = [0,1,2,5,8,11,14, 16]
+p = [0,1,2,5,8,11,14,16]
 torch.set_printoptions(precision=3, sci_mode = False)
 np.set_printoptions(precision =3)
 
@@ -81,26 +81,29 @@ def get_models(game_type, l1, l2, rho, n_actions):
     return models
 
 def get_prediction(X, models, next_pos, reward):
-    # filename = data_dir + "oo_transition_matrix_{}.npz".format(75)
-    # f = np.load(filename, mmap_mode='r', allow_pickle=True)
-    # inp = f["mat"]
-    # print("X Input {}".format(X))
-    X_train = np.zeros((1,19))
-    X_train[:,:15] = X[:,:15]
-    X_train[:,16] = int(X[:,17] > 0)
-    X_train[:,17:19] = next_pos
-    X_train[:,15] = reward
+    X_orig = np.zeros((1,19))
+    X_orig[:,:15] = X[:,:15]
+    X_orig[:,16] = int(X[:,17] > 0)
+    X_orig[:,17:19] = next_pos
+    X_orig[:,15] = reward
+
+    X_train = copy(X_orig)
+    print(X_train)
+    X_train[:, 17:19] = 0
+    X_train[:,15] = 0
     action = int(X[0,15])
-    Z = np.zeros_like(X_train)
+    Z = np.zeros_like(X_orig)
     Z[:, p] = X_train[:, p]
     X_torch = torch.from_numpy(X_train).type(torch.FloatTensor)
     Z_torch = torch.from_numpy(Z).type(torch.FloatTensor)
+    X_orig_torch = torch.from_numpy(X_orig).type(torch.FloatTensor)
     train_pred = models[action](X_torch, Z_torch)
-    # print("Input {}".format(X_train))
-    # print("Prediction {}".format(train_pred))
+
+    print("Input {}".format(X_train))
+    print("Orig {}".format(X_orig))
     next_pos = train_pred[0,17:19].detach().numpy()
     reward_pred = train_pred[0,15].detach().numpy()
-    train_loss = squared_loss(train_pred, X_torch)
+    train_loss = squared_loss(train_pred, X_orig_torch)
     return next_pos, reward_pred, train_loss
 
 def main():
@@ -133,7 +136,7 @@ def main():
         curr_obs = env.reset()
         curr_objects = env.maze.objects
         for step in range(args.max_episode_length):
-            print("################ Step {}".format(step))
+            print("################ Step {} ################".format(step))
             if len(colors) == 0:
                 for o in env.maze.objects:
                     if len(o.positions) != 0:

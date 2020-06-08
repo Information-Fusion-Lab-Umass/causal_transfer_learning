@@ -30,6 +30,7 @@ parser.add_argument('--l2', default = 0.01, type = float, help = 'lambda2: penal
 parser.add_argument('--rho', default = 0.0, type = float, help = 'rho: penalty for regularizer for acyclicity')
 parser.add_argument('--save_results', default = 1, choices = [0,1], type = int, help = 'flag to save results')
 parser.add_argument('--train_frac', default = 100, type = float, help = 'fraction of data to be trained on')
+parser.add_argument('--upweight', default = 6, type = int, help = 'Upweight points with non-zero rewards to improve prediction')
 
 args = parser.parse_args()
 
@@ -81,14 +82,29 @@ for i in range(4):
     print(df[r'\textit{$reward^{t+1}$}'].value_counts())
 
     X_all = X_all.astype("int")
+    r_idx = X_all[:,15] != 0
+    N = X_all.shape[0]
+    non_negative_indices = np.arange(N)[r_idx]
+    check =  non_negative_indices
+
+    repeat_array = np.ones(N).astype("int")
+    repeat_array[non_negative_indices] = args.upweight
+
+    X_all = np.repeat(X_all, repeat_array, axis = 0)
+
+    print("#########Repeated Counts###########")
+    df = pd.DataFrame(data=X_all, columns= vars)
+    print(df.groupby([r'\textit{$reward^{t+1}$}', r'\textit{$num\_keys^{t}$}']).count())
+    print(df[r'\textit{$reward^{t+1}$}'].value_counts())
+
+
     train_size = int((args.train_frac/100) * X_all.shape[0])
     print("============= Train Percentage {} Train Data {}============".format(args.train_frac, train_size))
     idx = np.arange(X_all.shape[0])
     np.random.shuffle(idx)
     idx = np.random.choice(idx, size = train_size, replace = False)
     X_train = X_all[idx]
-    r_idx = X_train[:,15] > 0
-    check = np.arange(X_train.shape[0])[r_idx]
+
 
     p = [0,1,2,5,8,11,14,16]
     q = []
@@ -102,9 +118,11 @@ for i in range(4):
     X_orig = copy(X_train)
     X_train[:,15] = 0 # reward = 0
     X_train[:,17:19] = 0 # next_pos = 0
-    print("X_train {}".format(X_train[0]))
-    print("X_orig {}".format(X_orig[0]))
-    print("Z {}".format(Z[0]))
+    q_l = [3,4,6,7,9,10,12,13]
+    X_train[:,q_l] = 0
+    print("X_train {}".format(X_train[check[0]]))
+    print("X_orig {}".format(X_orig[check[0]]))
+    print("Z {}".format(Z[check[0]]))
 
     model = NotearsMLP(dims=[X_train.shape[1], 10, 1], bias=True)
     model_name = model_dir + "{}_l1_{:.2f}_l2_{:.2f}_rho_{:.2f}".format(actions[i], args.l1, args.l2, args.rho)
@@ -137,7 +155,7 @@ for i in range(4):
     if args.save_results == 1:
         W = model.fc1_to_adj()
         true_plot_name = plot_dir + "w_true_{}".format(actions[i])
-        est_plot_name = plot_dir + "w_est_{}.png".format(actions[i])
+        est_plot_name = plot_dir + "w_est_{}.pdf".format(actions[i])
 
         x_indices = q
         y_indices = p
