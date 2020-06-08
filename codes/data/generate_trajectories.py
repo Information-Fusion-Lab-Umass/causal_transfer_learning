@@ -127,7 +127,6 @@ def main():
     initial_positions = {"free": empty_positions, "switch": switch_positions, "prize": prize_positions}
     count = 0
     inp = []
-    colors = []
     reward = 0
     n_pos = len(empty_positions)
     models = get_models(args.game_type, args.l1, args.l2, args.rho, n_actions)
@@ -137,14 +136,9 @@ def main():
         curr_objects = env.maze.objects
         for step in range(args.max_episode_length):
             print("################ Step {} ################".format(step))
-            if len(colors) == 0:
-                for o in env.maze.objects:
-                    if len(o.positions) != 0:
-                        colors.append(o.colorname)
-                colors = np.unique(np.array(colors))
-                n_colors = len(colors)
+
             action = random.randrange(n_actions)
-            X = get_oo_repr(count, curr_objects, action, 0, n_colors, n_actions)
+            X = get_oo_repr(count, curr_objects, action, 0, n_actions)
             # print("Orig X {}".format(X))
 
             # next state
@@ -154,7 +148,7 @@ def main():
             if args.render == 1:
                 env.render('human')
                 time.sleep(0.1)
-            X = get_oo_repr(count, next_objects, action, reward, n_colors, n_actions)
+            X = get_oo_repr(count, next_objects, action, reward, n_actions)
             orig_pos = X[0,1:3]
             next_pos, reward_pred, loss = get_prediction(X[:,1:], models, orig_pos, reward)
 

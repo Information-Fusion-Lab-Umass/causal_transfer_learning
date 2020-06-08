@@ -57,7 +57,7 @@ def get_colors(colors):
         colors_int[i] = colors_dict[colors[i]]
     return colors_int
 
-def get_oo_repr(t, objects, action, reward, n_colors, n_actions):
+def get_oo_repr(t, objects, action, reward, n_actions):
     A = []
     for o in objects:
         if o.name == "switch":

@@ -77,6 +77,8 @@ datefmt="%H:%M:%S", handlers=[logging.FileHandler("{}/dqn_training.log".format(l
 
 logger = logging.getLogger(__name__)
 
+indices = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,18]
+
 
 if args.env == "source":
     invert = False
@@ -145,8 +147,12 @@ switch_positions = env.maze.objects.switch.positions
 prize_positions = env.maze.objects.prize.positions
 initial_positions = {"free": empty_positions, "switch": switch_positions, "prize": prize_positions}
 
-env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
-state = preprocess_image(env.reset(), args.device)
+env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = False, logger = logger)
+curr_obs = env.reset()
+curr_objects = env.maze.objects
+X = get_oo_repr(0, curr_objects, 0, 0, n_actions)
+curr_state = X[:, indices]
+curr_state = torch.tensor(curr_state, device = args.device, dtype = torch.float32).reshape(1,-1)
 
 # plt.imshow(state.detach().numpy().transpose(1,2,0))
 # plt.show()
@@ -177,17 +183,22 @@ if args.mode in ["train", "both"]:
         # Collect random data for initial burning period of 5000
         steps_done = 0
         total_rewards = 0
-        state = preprocess_image(env.reset(), args.device)
+        # state = preprocess_image(env.reset(), args.device)
+        curr_objects = env.maze.objects
         TARGET_UPDATE = args.TARGET_UPDATE
         count = 0
         discount_factor = 1
         for i_episode in tqdm(range(args.total_steps)):
             count = count + 1
             action, eps_threshold = select_action(policy_net, state, args)
-            next_state, reward, done, info = env.step(action)
-            next_state = preprocess_image(next_state, args.device)
+            next_obs, reward, done, info = env.step(action)
+            next_objects = env.maze.objects
+            X = get_oo_repr(count, next_objects, action, reward, n_colors, n_actions)
+            next_state = X[:,indices]
+
             total_rewards = total_rewards + discount_factor*reward
             discount_factor = discount_factor * args.gamma
+            next_state = torch.tensor(next_state, device = args.device, dtype = torch.float32).reshape(1,-1)
             reward = torch.tensor(reward, device = args.device, dtype = torch.float32).reshape(1,1)
             action = torch.tensor(action, device = args.device, dtype = torch.long).reshape(1,1)
             # Store the transition in memory
@@ -199,25 +210,34 @@ if args.mode in ["train", "both"]:
             if done:
                 #logger.info("Winning Reward {}".format(reward))
                 logger.info("Won the game: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
-                memory.push(state, action, reward, None)
+                memory.push(curr_state, action, reward, None)
                 env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
-                state = preprocess_image(env.reset(), args.device)
+                curr_obs = env.reset()
+                curr_objects = env.maze.objects
+                X = get_oo_repr(0, curr_objects, 0, 0, n_actions)
+                curr_state = X[:, indices]
+                curr_state = torch.tensor(curr_state, device = args.device, dtype = torch.float32).reshape(1,-1)
                 reward_vector.append(total_rewards)
                 count = 0
                 total_rewards = 0
                 discount_factor = 1
             else:
-                memory.push(state, action, reward, next_state)
+                memory.push(curr_state, action, reward, next_state)
                 if count >= args.max_episode_length:
                     logger.info("Terminating episode: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
                     env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
-                    state = preprocess_image(env.reset(), args.device)
+                    curr_obs = env.reset()
+                    curr_objects = env.maze.objects
+                    X = get_oo_repr(0, curr_objects, 0, 0, n_actions)
+                    curr_state = X[:, indices]
+                    curr_state = torch.tensor(curr_state, device = args.device, dtype = torch.float32).reshape(1,-1)
                     reward_vector.append(total_rewards)
                     count = 0
                     total_rewards = 0
                     discount_factor = 1
                 else:
-                    state = next_state
+                    curr_objects = next_objects
+                    curr_state = next_state
             if i_episode % TARGET_UPDATE == 0 and steps_done >= TARGET_UPDATE:
                 target_net.load_state_dict(policy_net.state_dict())
 
@@ -240,21 +260,28 @@ if args.mode in ["eval", "both"]:
     for trial in tqdm(range(args.num_trials)):
         for i_episode in tqdm(range(args.num_episodes)):
             env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
-            state = preprocess_image(env.reset(), args.device)
+            curr_obs = env.reset()
+            curr_objects = env.maze.objects
+            X = get_oo_repr(0, curr_objects, 0, 0, n_actions)
+            curr_state = X[:, indices]
+            curr_state = torch.tensor(curr_state, device = args.device, dtype = torch.float32).reshape(1,-1)
             total_rewards = 0
             discount_factor = 1
-            state = preprocess_image(env.reset(), args.device)
             for step in range(args.max_episode_length):
-                action, eps_threshold = select_action(policy_net, state, args, eval_mode = True)
+                action, eps_threshold = select_action(policy_net, curr_state, args, eval_mode = True)
                 next_state, reward, done, info = env.step(action)
+                next_objects = env.maze.objects
+                X = get_oo_repr(count, next_objects, action, reward, n_colors, n_actions)
+                next_state = X[:,indices]
+                next_state = torch.tensor(next_state, device = args.device, dtype = torch.float32).reshape(1,-1)
+
                 total_rewards = total_rewards + discount_factor* reward
                 discount_factor = discount_factor * args.gamma
                 if done:
                     logger.info("Won the game in {} steps. Resetting the game!".format(step))
                     break
             rewards[trial, i_episode] = total_rewards
+            curr_state = next_state
             logger.info("Trial {} Episode {} rewards {}".format(trial, i_episode, rewards[trial, i_episode]))
     np.savez(plot_dir + "dqn_rewards", r = rewards)
     plot_rewards(rewards, plot_dir + "test_rewards.png", std_error = True)
-    # plot_rewards(train_reward_vec, plot_dir + "train_rewards.png", std_error = False)
-    # plot_rewards(loss_vec, plot_dir + "train_loss.png", std_error = False)
