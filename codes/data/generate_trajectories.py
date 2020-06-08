@@ -12,6 +12,7 @@ import random
 import torch
 from structural_generation import *
 from notears_nonlinear import *
+from codes.utils import *
 actions = {
 0: "up",
 1: "down",
@@ -49,7 +50,7 @@ actions = {
 vars = ['ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
          'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1','r_t1', 'ns_t1']
 
-p = [0,1,2,5,8,11,14,16]
+p = [0,1,2,5,8,11,14, 16]
 torch.set_printoptions(precision=3, sci_mode = False)
 np.set_printoptions(precision =3)
 
@@ -78,6 +79,29 @@ def get_models(game_type, l1, l2, rho, n_actions):
         model.load_state_dict(torch.load(model_name))
         models[action] = model
     return models
+
+def get_prediction(X, models, next_pos, reward):
+    # filename = data_dir + "oo_transition_matrix_{}.npz".format(75)
+    # f = np.load(filename, mmap_mode='r', allow_pickle=True)
+    # inp = f["mat"]
+    # print("X Input {}".format(X))
+    X_train = np.zeros((1,19))
+    X_train[:,:15] = X[:,:15]
+    X_train[:,16] = int(X[:,17] > 0)
+    X_train[:,17:19] = next_pos
+    X_train[:,15] = reward
+    action = int(X[0,15])
+    Z = np.zeros_like(X_train)
+    Z[:, p] = X_train[:, p]
+    X_torch = torch.from_numpy(X_train).type(torch.FloatTensor)
+    Z_torch = torch.from_numpy(Z).type(torch.FloatTensor)
+    train_pred = models[action](X_torch, Z_torch)
+    # print("Input {}".format(X_train))
+    # print("Prediction {}".format(train_pred))
+    next_pos = train_pred[0,17:19].detach().numpy()
+    reward_pred = train_pred[0,15].detach().numpy()
+    train_loss = squared_loss(train_pred, X_torch)
+    return next_pos, reward_pred, train_loss
 
 def main():
     x, start_idx = basic_maze(args.width, args.height, args.n_switches, args.n_prizes, args.random_obstacles)
@@ -109,6 +133,7 @@ def main():
         curr_obs = env.reset()
         curr_objects = env.maze.objects
         for step in range(args.max_episode_length):
+            print("################ Step {}".format(step))
             if len(colors) == 0:
                 for o in env.maze.objects:
                     if len(o.positions) != 0:
@@ -117,17 +142,7 @@ def main():
                 n_colors = len(colors)
             action = random.randrange(n_actions)
             X = get_oo_repr(count, curr_objects, action, 0, n_colors, n_actions)
-            X = X[:, 1:]
-            X_train = np.zeros((1, 19))
-            X_train[0,p] = X[:,p]
-            Z = X[:,p]
-
-            X_torch = torch.from_numpy(X_train).type(torch.FloatTensor)
-            Z_torch = torch.from_numpy(Z).type(torch.FloatTensor)
-            train_pred = models[action](X_torch, Z_torch)
-            print(train_pred)
-            next_pos = train_pred[0,:-2].detach().numpy()
-            reward_pred = train_pred[0,-4].detach().numpy()
+            # print("Orig X {}".format(X))
 
             # next state
             next_obs, reward, done, info = env.step(action)
@@ -138,9 +153,10 @@ def main():
                 time.sleep(0.1)
             X = get_oo_repr(count, next_objects, action, reward, n_colors, n_actions)
             orig_pos = X[0,1:3]
-            print("Prediction: x_pos {:.2f} y-pos {:.2f} reward {:.2f}".format(next_pos[0], next_pos[1], reward_pred))
-            print("Original: x_pos {:.2f} y-pos {:.2f} reward {:.2f}".format(orig_pos[0], orig_pos[1], reward))
+            next_pos, reward_pred, loss = get_prediction(X[:,1:], models, orig_pos, reward)
 
+            print("Prediction: x_pos {} y-pos {} reward {} loss {}".format(next_pos[0], next_pos[1], reward_pred, loss.item()))
+            print("Original: x_pos {} y-pos {} reward {}".format(orig_pos[0], orig_pos[1], reward))
             count = count + 1
             curr_objects = next_objects
             curr_obs = next_obs

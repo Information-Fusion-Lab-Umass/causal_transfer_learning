@@ -159,17 +159,18 @@ def squared_loss(output, target):
     return loss
 
 
-def dual_ascent_step(model, X, Z, lambda1, lambda2, rho, alpha, h, rho_max):
+def dual_ascent_step(model, X, Z, X_orig, lambda1, lambda2, rho, alpha, h, rho_max):
     """Perform one step of dual ascent in augmented Lagrangian."""
     h_new = None
     optimizer = LBFGSBScipy(model.parameters())
     X_torch = torch.from_numpy(X).type(torch.FloatTensor)
     Z_torch = torch.from_numpy(Z).type(torch.FloatTensor)
+    X_orig_torch = torch.from_numpy(X_orig).type(torch.FloatTensor)
     while rho < rho_max:
         def closure():
             optimizer.zero_grad()
             X_hat = model(X_torch, Z_torch)
-            loss = squared_loss(X_hat, X_torch)
+            loss = squared_loss(X_hat, X_orig_torch)
             h_val = model.h_func()
             penalty = 0.5 * rho * h_val * h_val + alpha * h_val
             l2_reg = 0.5 * lambda2 * model.l2_reg()
@@ -192,6 +193,7 @@ def dual_ascent_step(model, X, Z, lambda1, lambda2, rho, alpha, h, rho_max):
 def notears_nonlinear(model: nn.Module,
                       X: np.ndarray,
                       Z: np.ndarray,
+                      X_orig: np.ndarray,
                       model_name: str = "",
                       rho: float = 0,
                       lambda1: float = 0.,
@@ -202,7 +204,7 @@ def notears_nonlinear(model: nn.Module,
                       w_threshold: float = 0.3):
     alpha, h = 0.0, np.inf
     for _ in range(max_iter):
-        rho, alpha, h = dual_ascent_step(model, X, Z, lambda1, lambda2,
+        rho, alpha, h = dual_ascent_step(model, X, Z, X_orig, lambda1, lambda2,
                                          rho, alpha, h, rho_max)
         print("Iteration rho {} rho_max {} h {} h_tol {}".format(rho, rho_max, h, h_tol))
 

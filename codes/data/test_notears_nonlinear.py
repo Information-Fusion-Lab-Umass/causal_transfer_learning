@@ -7,6 +7,7 @@ from codes.utils import *
 import os
 import torch
 import pandas as pd
+from copy import copy
 
 torch.set_printoptions(precision=3, sci_mode = False)
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -86,7 +87,7 @@ for i in range(4):
     np.random.shuffle(idx)
     idx = np.random.choice(idx, size = train_size, replace = False)
     X_train = X_all[idx]
-    r_idx = X_train[:,15] < 0
+    r_idx = X_train[:,15] > 0
     check = np.arange(X_train.shape[0])[r_idx]
 
     p = [0,1,2,5,8,11,14,16]
@@ -95,13 +96,20 @@ for i in range(4):
     for j in range(len(vars)):
         if j not in p:
             q.append(j)
+    # q = [15, 17, 18]
     Z = np.zeros(X_train.shape)
     Z[:,p] = X_train[:,p]
+    X_orig = copy(X_train)
+    X_train[:,15] = 0 # reward = 0
+    X_train[:,17:19] = 0 # next_pos = 0
+    print("X_train {}".format(X_train[0]))
+    print("X_orig {}".format(X_orig[0]))
+    print("Z {}".format(Z[0]))
 
     model = NotearsMLP(dims=[X_train.shape[1], 10, 1], bias=True)
     model_name = model_dir + "{}_l1_{:.2f}_l2_{:.2f}_rho_{:.2f}".format(actions[i], args.l1, args.l2, args.rho)
     if args.mode in ["train", "both"]:
-        W_est = notears_nonlinear(model, X_train, Z, model_name = model_name, rho = args.rho, lambda1=args.l1, lambda2=args.l2)
+        W_est = notears_nonlinear(model, X_train, Z, X_orig, model_name = model_name, rho = args.rho, lambda1=args.l1, lambda2=args.l2)
         # W_est = notears_linear(X_train, Z, lambda1 = args.l, rho = args.rho, alpha = args.alpha, disp = args.disp)
 
         if args.save_results == 1:
@@ -115,25 +123,29 @@ for i in range(4):
     with torch.no_grad():
         X_torch = torch.from_numpy(X_train).type(torch.FloatTensor)
         Z_torch = torch.from_numpy(Z).type(torch.FloatTensor)
+        X_orig_torch = torch.from_numpy(X_orig).type(torch.FloatTensor)
         train_pred = model(X_torch, Z_torch)
-        train_loss = squared_loss(train_pred, X_torch)
-        X_eng = analyze(X_torch[check[0]].reshape(1,-1))
+        train_loss = squared_loss(train_pred, X_orig_torch)
+        X_eng = analyze(X_orig_torch[check[5]].reshape(1,-1))
         print(len(vars), X_eng.shape, train_pred.shape)
         print("Train loss {}".format(train_loss.item()))
         print("============== Action {} ==================".format(actions[i]))
         for j in range(X_torch.shape[1]):
-            print(vars[j], X_eng[0, j], train_pred[check[0], j].item())
+            print(vars[j], X_eng[0, j], train_pred[check[5], j].item())
 
 
     if args.save_results == 1:
         W = model.fc1_to_adj()
         true_plot_name = plot_dir + "w_true_{}".format(actions[i])
-        est_plot_name = plot_dir + "w_est_{}.pdf".format(actions[i])
+        est_plot_name = plot_dir + "w_est_{}.png".format(actions[i])
 
         x_indices = q
         y_indices = p
+        # y_indices = np.arange(len(s_vars) - 1)
         y_label = [vars[k] for k in p]
+        # y_label = vars
         x_label = [vars[k] for k in q]
+
 
         # plot_weight_sem(W_true, true_plot_name, x_indices, y_indices, x_label, y_label)
         plot_weight_sem(W, est_plot_name, x_indices, y_indices, x_label, y_label, actions[i])
