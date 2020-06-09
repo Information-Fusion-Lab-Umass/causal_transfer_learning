@@ -59,7 +59,7 @@ def plot_rewards(rewards, plot_name, std_error = False):
     mean = np.mean(rewards, axis = 0)
     std = np.std(rewards, axis = 0)
     N = np.arange(n_episodes)
-    plt.plot(N, mean, label = "Tabular Q-learning")
+    plt.plot(N, mean, label = "DQN")
     if std_error == True:
     	plt.fill_between(N, mean - std, mean + std, color='gray', alpha=0.2)
     # plt.plot(N, mean+std)
@@ -151,6 +151,7 @@ def causal_model(inp, l1, l2, rho, model_dir, n_actions, train_frac = 90):
         model = NotearsMLP(dims=[X_tr.shape[1], 10, 1], bias=True)
         model_name = model_dir + "{}_l1_{:.2f}_l2_{:.2f}_rho_{:.2f}".format(actions[i], l1, l2, rho)
         if os.path.exists(model_name):
+            print("Loading causal model")
             model.load_state_dict(torch.load(model_name))
         W_est = notears_nonlinear(model, X_tr, Z_tr, X_tr_orig, model_name = model_name, rho = rho, lambda1=l1, lambda2=l2)
 

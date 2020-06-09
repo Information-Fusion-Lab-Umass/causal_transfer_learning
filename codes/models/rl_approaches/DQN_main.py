@@ -56,6 +56,8 @@ parser.add_argument('--no_switches', action = 'store_true', help='Disable switch
 parser.add_argument('--l1', default = 0.01, type = float, help = 'lambda 1: penalty for regularizer')
 parser.add_argument('--l2', default = 0.01, type = float, help = 'lambda2: penalty for regularizer')
 parser.add_argument('--rho', default = 1.0, type = float, help = 'rho: penalty for regularizer for acyclicity')
+parser.add_argument('--use_causal_model', action = 'store_true', help='Enable causal model')
+parser.add_argument('--causal_update', type=int, default=2000, help='Number of steps for updating the causal model')
 
 args = parser.parse_args()
 
@@ -142,6 +144,7 @@ def make_env(args):
     switch_positions = env.maze.objects.switch.positions
     prize_positions = env.maze.objects.prize.positions
     initial_positions = {"free": empty_positions, "switch": switch_positions, "prize": prize_positions}
+    logger.info("Prize positions {}".format(prize_positions))
 
     env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = False, logger = logger)
     curr_obs = env.reset()
@@ -225,6 +228,8 @@ if args.mode in ["train", "both"]:
                 loss = optimize_model(optimizer, policy_net, target_net, memory, args.batch_size, args.device, args.gamma)
                 # loss_vector[steps_done - args.burning] = loss.item()
 
+            if args.use_causal_model and steps_done >= args.causal_update:
+                print("Using causal model")
                 models = causal_model(inp, args.l1, args.l2, args.rho, model_dir, n_actions, train_frac = 90)
                 #logger.info("Step {} average Q-learning loss {:.4f}".format(steps_done, loss.item()))
             if done:
@@ -259,42 +264,52 @@ if args.mode in ["train", "both"]:
         torch.save(target_net.state_dict(), model_dir + "target_net_DQN")
         all_rewards.append(reward_vector)
     rewards_array = np.array(all_rewards)
-    np.savez(plot_dir + "dqn_train_rewards.npz", r = rewards_array)
+    np.savez(plot_dir + "dqn_train_rewards_{}.npz".format(args.gamma), r = rewards_array)
 
 
 
-if args.mode in ["eval", "both"]:
-    # memory = torch.load(data_dir + "replay_buffer")
-    policy_net = DQN(args).to(device=args.device)
-    policy_net.load_state_dict(torch.load(model_dir + "policy_net_DQN"))
-    train_reward_vec = np.load(plot_dir + "dqn_loss_rewards.npz")['r'].reshape(1,-1)
-    loss_vec = np.load(plot_dir + "dqn_loss_rewards.npz")['l'].reshape(1,-1)
-    rewards = np.zeros((args.num_trials, args.num_episodes))
-    for trial in tqdm(range(args.num_trials)):
-        for i_episode in tqdm(range(args.num_episodes)):
-            env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
-            curr_obs = env.reset()
-            curr_objects = env.maze.objects
-            X = get_oo_repr(0, curr_objects, 0, 0, n_actions)
-            curr_state = curr_X[:, indices]
-            curr_state = torch.tensor(curr_state, device = args.device, dtype = torch.float32).reshape(1,-1)
-            total_rewards = 0
-            discount_factor = 1
-            for step in range(args.max_episode_length):
-                action, eps_threshold = select_action(policy_net, curr_state, args, eval_mode = True)
-                next_state, reward, done, info = env.step(action)
-                next_objects = env.maze.objects
-                next_X = get_oo_repr(count, next_objects, action, reward, n_colors, n_actions)
-                next_state = next_X[:,indices]
-                next_state = torch.tensor(next_state, device = args.device, dtype = torch.float32).reshape(1,-1)
+# if args.mode in ["eval", "both"]:
+#     vec = np.load(plot_dir + "dqn_train_rewards_{}.npz".format(args.gamma), allow_pickle = True)['r']
+#     result = np.zeros((vec.shape[0], 792))
+#     for i in range(vec.shape[0]):
+#         print(len(vec[i]))
+#         for j in range(792):
+#             result[i,j] = vec[i][j]
+#
+#
+#     plot_rewards(result, plot_dir + "train_rewards_0.99.png", std_error = True)
 
-                total_rewards = total_rewards + discount_factor* reward
-                discount_factor = discount_factor * args.gamma
-                if done:
-                    logger.info("Won the game in {} steps. Resetting the game!".format(step))
-                    break
-            rewards[trial, i_episode] = total_rewards
-            curr_state = next_state
-            logger.info("Trial {} Episode {} rewards {}".format(trial, i_episode, rewards[trial, i_episode]))
-    np.savez(plot_dir + "dqn_rewards", r = rewards)
-    plot_rewards(rewards, plot_dir + "test_rewards.png", std_error = True)
+    # # memory = torch.load(data_dir + "replay_buffer")
+    # policy_net = DQN(args).to(device=args.device)
+    # policy_net.load_state_dict(torch.load(model_dir + "policy_net_DQN"))
+    # train_reward_vec = np.load(plot_dir + "dqn_loss_rewards.npz")['r'].reshape(1,-1)
+    # loss_vec = np.load(plot_dir + "dqn_loss_rewards.npz")['l'].reshape(1,-1)
+    # rewards = np.zeros((args.num_trials, args.num_episodes))
+    # for trial in tqdm(range(args.num_trials)):
+    #     for i_episode in tqdm(range(args.num_episodes)):
+    #         env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = True, logger = logger)
+    #         curr_obs = env.reset()
+    #         curr_objects = env.maze.objects
+    #         X = get_oo_repr(0, curr_objects, 0, 0, n_actions)
+    #         curr_state = curr_X[:, indices]
+    #         curr_state = torch.tensor(curr_state, device = args.device, dtype = torch.float32).reshape(1,-1)
+    #         total_rewards = 0
+    #         discount_factor = 1
+    #         for step in range(args.max_episode_length):
+    #             action, eps_threshold = select_action(policy_net, curr_state, args, eval_mode = True)
+    #             next_state, reward, done, info = env.step(action)
+    #             next_objects = env.maze.objects
+    #             next_X = get_oo_repr(count, next_objects, action, reward, n_colors, n_actions)
+    #             next_state = next_X[:,indices]
+    #             next_state = torch.tensor(next_state, device = args.device, dtype = torch.float32).reshape(1,-1)
+    #
+    #             total_rewards = total_rewards + discount_factor* reward
+    #             discount_factor = discount_factor * args.gamma
+    #             if done:
+    #                 logger.info("Won the game in {} steps. Resetting the game!".format(step))
+    #                 break
+    #         rewards[trial, i_episode] = total_rewards
+    #         curr_state = next_state
+    #         logger.info("Trial {} Episode {} rewards {}".format(trial, i_episode, rewards[trial, i_episode]))
+    # np.savez(plot_dir + "dqn_rewards", r = rewards)
+    # plot_rewards(rewards, plot_dir + "test_rewards.png", std_error = True)
