@@ -53,6 +53,9 @@ parser.add_argument('--total-steps', type=int, default=250000, help='Total numbe
 parser.add_argument('--burning', type=int, default=3000, help='Burning number of steps for which random policy follows')
 parser.add_argument('--start-learn-thresh', type=int, default=1000, help='Learning steps after which model learns')
 parser.add_argument('--no_switches', action = 'store_true', help='Disable switches')
+parser.add_argument('--l1', default = 0.01, type = float, help = 'lambda 1: penalty for regularizer')
+parser.add_argument('--l2', default = 0.01, type = float, help = 'lambda2: penalty for regularizer')
+parser.add_argument('--rho', default = 1.0, type = float, help = 'rho: penalty for regularizer for acyclicity')
 
 args = parser.parse_args()
 
@@ -92,6 +95,13 @@ heights = np.arange(5,80, 5)
 gym.envs.register(id = env_id, entry_point = SourceEnv, max_episode_steps = 1000)
 
 
+def model_based_X(curr_X, next_X):
+    N = curr_X.shape[1]
+    model_X = np.zeros((1, N+2))
+    model_X[:,:N] = curr_X[:,:N]
+    model_X[:,N:N+2] = next_X[:,0:2]
+    model_X[:, 15:17] = next_X[:,15:17]
+    return model_X
 
 def preprocess_image(image, device):
     image = cv2.resize(image, (40, 40), interpolation=cv2.INTER_LINEAR).reshape(40,40,3).transpose(2,0,1)
@@ -110,14 +120,15 @@ def select_action(policy_net, state, args, eval_mode = False):
         eps_threshold = 0.001
     if sample > eps_threshold:
         with torch.no_grad():
-            result  = policy_net(state.reshape(1, args.input_channels, args.h, args.w))
+            result  = policy_net(state)
             action = result.max(1)[1].view(1, 1).cpu().detach().numpy()[0][0]
     else:
         action = random.randrange(args.action_space)
     return action, eps_threshold
 
 def make_env(args):
-    height = np.random.choice(heights)
+    # height = np.random.choice(heights)
+    height = 10
     if args.no_switches:
         total_switches = 0
     else:
@@ -125,7 +136,6 @@ def make_env(args):
 
     total_prizes = 2
     x, start_idx = basic_maze(width = height, height = height, total_switches = total_switches, total_prizes = total_prizes, random_obstacles = args.random_obstacles)
-
     env = gym.make(env_id, x = copy(x), start_idx = start_idx, invert = invert, return_image = True, logger = logger)
     n_actions = env.action_space.n
     empty_positions = env.maze.objects.free.positions
@@ -136,11 +146,11 @@ def make_env(args):
     env = gym.make(env_id, x = copy(x), start_idx = start_idx, initial_positions = initial_positions, invert = invert, return_image = False, logger = logger)
     curr_obs = env.reset()
     curr_objects = env.maze.objects
-    X = get_oo_repr(0, curr_objects, 0, 0, n_actions)
-    curr_state = X[:, indices]
+    curr_X = get_oo_repr(0, curr_objects, 0, 0, n_actions)
+    curr_state = curr_X[:, indices]
     curr_state = torch.tensor(curr_state, device = args.device, dtype = torch.float32).reshape(1,-1)
 
-    return env, curr_state
+    return env, curr_state, curr_X
 
 args = parser.parse_args()
 logger.info(' ' * 26 + 'Options')
@@ -156,7 +166,7 @@ else:
 
 logger.info("Running on {}".format(args.device))
 
-env, curr_state = make_env(args)
+env, curr_state, curr_X = make_env(args)
 n_actions = env.action_space.n
 
 # # plt.imshow(state.detach().numpy().transpose(1,2,0))
@@ -184,6 +194,7 @@ if args.mode in ["train", "both"]:
         target_net.eval()
         optimizer = optim.RMSprop(policy_net.parameters(), lr = args.lr)
         memory = ReplayMemory(args.memory_size)
+        inp = []
         loss_vector = np.zeros(args.total_steps - args.burning + 1)
         reward_vector = []
         # Collect random data for initial burning period of 5000
@@ -199,9 +210,10 @@ if args.mode in ["train", "both"]:
             action, eps_threshold = select_action(policy_net, curr_state, args)
             next_obs, reward, done, info = env.step(action)
             next_objects = env.maze.objects
-            X = get_oo_repr(count, next_objects, action, reward,n_actions)
-            next_state = X[:,indices]
-
+            next_X = get_oo_repr(count, next_objects, action, reward,n_actions)
+            next_state = next_X[:,indices]
+            model_X = model_based_X(curr_X[:,1:], next_X[:,1:])
+            inp.append(model_X)
             total_rewards = total_rewards + discount_factor*reward
             discount_factor = discount_factor * args.gamma
             next_state = torch.tensor(next_state, device = args.device, dtype = torch.float32).reshape(1,-1)
@@ -211,18 +223,16 @@ if args.mode in ["train", "both"]:
 
             if steps_done >= args.start_learn_thresh:
                 loss = optimize_model(optimizer, policy_net, target_net, memory, args.batch_size, args.device, args.gamma)
-                loss_vector[steps_done - args.burning] = loss.item()
+                # loss_vector[steps_done - args.burning] = loss.item()
+
+                models = causal_model(inp, args.l1, args.l2, args.rho, model_dir, n_actions, train_frac = 90)
                 #logger.info("Step {} average Q-learning loss {:.4f}".format(steps_done, loss.item()))
             if done:
                 #logger.info("Winning Reward {}".format(reward))
                 logger.info("Won the game: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
-                memory.push(curr_state, action, reward, None)
-                env, curr_state = make_env(args)
-                curr_obs = env.reset()
+                memory.push(curr_state, action, reward, next_state)
+                env, curr_state, curr_X = make_env(args)
                 curr_objects = env.maze.objects
-                X = get_oo_repr(0, curr_objects, 0, 0, n_actions)
-                curr_state = X[:, indices]
-                curr_state = torch.tensor(curr_state, device = args.device, dtype = torch.float32).reshape(1,-1)
                 reward_vector.append(total_rewards)
                 count = 0
                 total_rewards = 0
@@ -231,12 +241,8 @@ if args.mode in ["train", "both"]:
                 memory.push(curr_state, action, reward, next_state)
                 if count >= args.max_episode_length:
                     logger.info("Terminating episode: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
-                    env, curr_state = make_env(args)
-                    curr_obs = env.reset()
+                    env, curr_state, curr_X = make_env(args)
                     curr_objects = env.maze.objects
-                    X = get_oo_repr(0, curr_objects, 0, 0, n_actions)
-                    curr_state = X[:, indices]
-                    curr_state = torch.tensor(curr_state, device = args.device, dtype = torch.float32).reshape(1,-1)
                     reward_vector.append(total_rewards)
                     count = 0
                     total_rewards = 0
@@ -244,6 +250,7 @@ if args.mode in ["train", "both"]:
                 else:
                     curr_objects = next_objects
                     curr_state = next_state
+                    curr_X = next_X
             if i_episode % TARGET_UPDATE == 0 and steps_done >= TARGET_UPDATE:
                 target_net.load_state_dict(policy_net.state_dict())
 
@@ -269,7 +276,7 @@ if args.mode in ["eval", "both"]:
             curr_obs = env.reset()
             curr_objects = env.maze.objects
             X = get_oo_repr(0, curr_objects, 0, 0, n_actions)
-            curr_state = X[:, indices]
+            curr_state = curr_X[:, indices]
             curr_state = torch.tensor(curr_state, device = args.device, dtype = torch.float32).reshape(1,-1)
             total_rewards = 0
             discount_factor = 1
@@ -277,8 +284,8 @@ if args.mode in ["eval", "both"]:
                 action, eps_threshold = select_action(policy_net, curr_state, args, eval_mode = True)
                 next_state, reward, done, info = env.step(action)
                 next_objects = env.maze.objects
-                X = get_oo_repr(count, next_objects, action, reward, n_colors, n_actions)
-                next_state = X[:,indices]
+                next_X = get_oo_repr(count, next_objects, action, reward, n_colors, n_actions)
+                next_state = next_X[:,indices]
                 next_state = torch.tensor(next_state, device = args.device, dtype = torch.float32).reshape(1,-1)
 
                 total_rewards = total_rewards + discount_factor* reward

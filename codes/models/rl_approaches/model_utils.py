@@ -6,6 +6,51 @@ import torch.nn.functional as F
 import numpy as np
 
 import matplotlib.pyplot as plt
+from codes.data.structural_generation import *
+from codes.data.notears_nonlinear import *
+import argparse
+import igraph as ig
+import matplotlib.pyplot as plt
+from codes.utils import *
+import os
+import torch
+import pandas as pd
+from copy import copy
+
+actions = {
+0: "up",
+1: "down",
+2: "left",
+3: "right",
+}
+colors_dict = {'white': 3, 'black': 0, 'green': 1, 'red': 2, 'yellow': 4}
+s_vars = ['ax_t1', 'ay_t1', 'ac_t1', 'ux_t1', 'uy_t1', 'uc_t1', 'dx_t1',
+         'dy_t1', 'dc_t1', 'lx_t1', 'ly_t1', 'lc_t1', 'rx_t1', 'ry_t1', 'rc_t1',
+         'a_t1', 'r_t1', 'ns_t1', 'ax_t2', 'ay_t2']
+text_vars = [r'\textit{$agent.x^{t}$}', r'\textit{$agent.y^{t}$}', r'\textit{$agent.c^{t}$}', r'\textit{$up.x^{t}$}', r'\textit{$up.y^{t}$}', r'\textit{$up.c^{t}$}', r'\textit{$down.x^{t}$}',
+         r'\textit{$down.y^{t}$}', r'\textit{$down.c^{t}$}', r'\textit{$left.x^{t}$}', r'\textit{$left.y^{t}$}', r'\textit{$left.c^{t}$}', r'\textit{$right.x^{t}$}', r'\textit{$right.y^{t}$}',
+         r'\textit{$right.c^{t}$}', r'\textit{$reward^{t+1}$}', r'\textit{$num\_keys^{t}$}', r'\textit{$agent.x^{t+1}$}', r'\textit{$agent.y^{t+1}$}']
+
+
+p = [0,1,2,5,8,11,14,16]
+q = []
+
+for j in range(len(text_vars)):
+    if j not in p:
+        q.append(j)
+
+def get_input_data(X):
+    Z = np.zeros(X.shape)
+    Z[:,p] = X[:,p]
+    X_orig = copy(X)
+    X[:,15] = 0 # reward = 0
+    X[:,17:19] = 0 # next_pos = 0
+    q_l = [3,4,6,7,9,10,12,13]
+    X[:,q_l] = 0
+    # print("X {}".format(X[0]))
+    # print("X_orig {}".format(X_orig[0]))
+    # print("Z {}".format(Z[0]))
+    return X, X_orig, Z
 
 def plot_rewards(rewards, plot_name, std_error = False):
     n_trials, n_episodes = rewards.shape
@@ -77,3 +122,68 @@ def optimize_model(optimizer, policy_net, target_net, memory, BATCH_SIZE, device
         param.grad.data.clamp_(-1, 1)
     optimizer.step()
     return loss
+
+
+def causal_model(inp, l1, l2, rho, model_dir, n_actions, train_frac = 90):
+    models = {}
+    inp = np.array(inp).squeeze(1)
+    print(inp[:5])
+    for i in range(n_actions):
+
+        X_all = inp[inp[:, 15] == i]
+        X_all = np.delete(X_all, 15, axis = 1)
+        X_all[X_all[:,16] > 0, 16] = 1
+
+        idx = np.arange(X_all.shape[0])
+        np.random.shuffle(idx)
+        train_size = int((train_frac/100) * X_all.shape[0])
+        train_idx = np.random.choice(idx, size = train_size, replace = False)
+        test_idx = []
+        for j in range(X_all.shape[0]):
+            if j not in train_idx:
+                test_idx.append(j)
+        X_train = X_all[train_idx]
+        X_test = X_all[test_idx]
+
+        X_tr, X_tr_orig, Z_tr = get_input_data(X_train)
+        X_te, X_te_orig, Z_te = get_input_data(X_test)
+
+        model = NotearsMLP(dims=[X_tr.shape[1], 10, 1], bias=True)
+        model_name = model_dir + "{}_l1_{:.2f}_l2_{:.2f}_rho_{:.2f}".format(actions[i], l1, l2, rho)
+        if os.path.exists(model_name):
+            model.load_state_dict(torch.load(model_name))
+        W_est = notears_nonlinear(model, X_tr, Z_tr, X_tr_orig, model_name = model_name, rho = rho, lambda1=l1, lambda2=l2)
+
+        with torch.no_grad():
+            X_tr_torch = torch.from_numpy(X_tr).type(torch.FloatTensor)
+            Z_tr_torch = torch.from_numpy(Z_tr).type(torch.FloatTensor)
+            X_tr_orig_torch = torch.from_numpy(X_tr_orig).type(torch.FloatTensor)
+            train_pred = model(X_tr_torch, Z_tr_torch)
+            train_loss = squared_loss(train_pred, X_tr_orig_torch)
+
+            X_te_torch = torch.from_numpy(X_te).type(torch.FloatTensor)
+            Z_te_torch = torch.from_numpy(Z_te).type(torch.FloatTensor)
+            X_te_orig_torch = torch.from_numpy(X_te_orig).type(torch.FloatTensor)
+            test_pred = model(X_te_torch, Z_te_torch)
+            test_loss = squared_loss(test_pred, X_te_orig_torch)
+
+            X_eng = analyze(X_tr_orig_torch[0].reshape(1,-1))
+            print(len(text_vars), X_eng.shape, train_pred.shape)
+            print("Train loss {}".format(train_loss.item()))
+            print("Test loss {}".format(test_loss.item()))
+            print("============== Action {} ==================".format(actions[i]))
+            for j in range(X_tr_torch.shape[1]):
+                print(s_vars[j], X_eng[0, j], train_pred[0, j].item())
+
+        W = model.fc1_to_adj()
+        est_plot_name = model_dir + "w_est_{}.png".format(actions[i])
+
+        x_indices = q
+        y_indices = p
+        y_label = [text_vars[k] for k in p]
+        x_label = [text_vars[k] for k in q]
+        plot_weight_sem(W, est_plot_name, x_indices, y_indices, x_label, y_label, actions[i])
+
+        models[actions[i]] = model
+
+    return models

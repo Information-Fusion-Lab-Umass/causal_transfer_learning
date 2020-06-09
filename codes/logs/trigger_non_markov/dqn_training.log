@@ -1,51 +1,44 @@
-19:11:41.759: - INFO:                           Options
-19:11:41.759: - INFO:                           env: source
-19:11:41.759: - INFO:                           random_obstacles: 0
-19:11:41.760: - INFO:                           width: 10
-19:11:41.760: - INFO:                           height: 10
-19:11:41.760: - INFO:                           render: 0
-19:11:41.760: - INFO:                           game_type: trigger_non_markov
-19:11:41.760: - INFO:                           mode: both
-19:11:41.760: - INFO:                           disable_cuda: False
-19:11:41.760: - INFO:                           seed: 123
-19:11:41.760: - INFO:                           max_episode_length: 100
-19:11:41.760: - INFO:                           history_length: 1
-19:11:41.760: - INFO:                           hidden_size: 64
-19:11:41.760: - INFO:                           EPS_START: 1.0
-19:11:41.760: - INFO:                           EPS_END: 0.05
-19:11:41.760: - INFO:                           EPS_DECAY: 25000
-19:11:41.760: - INFO:                           TARGET_UPDATE: 3000
-19:11:41.760: - INFO:                           memory_size: 10000000
-19:11:41.760: - INFO:                           batch_size: 256
-19:11:41.760: - INFO:                           num_episodes: 10
-19:11:41.760: - INFO:                           num_trials: 10
-19:11:41.760: - INFO:                           action_space: 4
-19:11:41.760: - INFO:                           lr: 0.001
-19:11:41.760: - INFO:                           gamma: 1.0
-19:11:41.760: - INFO:                           total_steps: 25000
-19:11:41.760: - INFO:                           burning: 3000
-19:11:41.760: - INFO:                           start_learn_thresh: 1000
-19:11:41.760: - INFO:                           no_switches: False
-19:11:41.760: - INFO: cuda available False device count 0
-19:11:41.761: - INFO: Running on cpu
-19:11:41.786: - INFO: trial 0
-19:11:43.443: - INFO: Terminating episode: count 100 steps_done 100 rewards 0.00 eps_threshold 1.00
-19:11:43.609: - INFO: Terminating episode: count 100 steps_done 200 rewards 0.00 eps_threshold 1.00
-19:11:46.444: - INFO: Terminating episode: count 100 steps_done 300 rewards 0.00 eps_threshold 1.00
-19:11:47.811: - INFO: Terminating episode: count 100 steps_done 400 rewards 0.00 eps_threshold 1.00
-19:11:49.475: - INFO: Terminating episode: count 100 steps_done 500 rewards 0.00 eps_threshold 1.00
-19:11:49.494: - INFO: Won the game: count 45 steps_done 545 rewards -1.00 eps_threshold 1.00
-19:11:51.949: - INFO: Terminating episode: count 100 steps_done 645 rewards 0.00 eps_threshold 1.00
-19:11:54.438: - INFO: Terminating episode: count 100 steps_done 745 rewards 0.00 eps_threshold 1.00
-19:11:55.524: - INFO: Terminating episode: count 100 steps_done 845 rewards 0.00 eps_threshold 1.00
-19:11:55.608: - INFO: Terminating episode: count 100 steps_done 945 rewards 0.00 eps_threshold 1.00
-19:11:56.213: - INFO: Terminating episode: count 100 steps_done 1045 rewards 0.00 eps_threshold 1.00
-19:11:56.690: - INFO: Terminating episode: count 100 steps_done 1145 rewards 0.00 eps_threshold 1.00
-19:11:57.050: - INFO: Terminating episode: count 100 steps_done 1245 rewards 0.00 eps_threshold 1.00
-19:11:57.275: - INFO: Won the game: count 76 steps_done 1321 rewards 2.00 eps_threshold 1.00
-19:12:02.074: - INFO: Terminating episode: count 100 steps_done 1421 rewards 0.00 eps_threshold 1.00
-19:12:08.109: - INFO: Terminating episode: count 100 steps_done 1521 rewards 0.00 eps_threshold 1.00
-19:12:09.000: - INFO: Terminating episode: count 100 steps_done 1621 rewards 0.00 eps_threshold 1.00
-19:12:15.030: - INFO: Terminating episode: count 100 steps_done 1721 rewards 0.00 eps_threshold 1.00
-19:12:15.309: - INFO: Won the game: count 90 steps_done 1811 rewards -9.00 eps_threshold 1.00
-19:12:16.292: - INFO: Terminating episode: count 100 steps_done 1911 rewards 0.00 eps_threshold 1.00
+20:11:46.409: - INFO:                           Options
+20:11:46.409: - INFO:                           env: source
+20:11:46.409: - INFO:                           random_obstacles: 0
+20:11:46.409: - INFO:                           width: 10
+20:11:46.409: - INFO:                           height: 10
+20:11:46.409: - INFO:                           render: 0
+20:11:46.409: - INFO:                           game_type: trigger_non_markov
+20:11:46.409: - INFO:                           mode: train
+20:11:46.409: - INFO:                           disable_cuda: False
+20:11:46.409: - INFO:                           seed: 123
+20:11:46.409: - INFO:                           max_episode_length: 100
+20:11:46.409: - INFO:                           history_length: 1
+20:11:46.409: - INFO:                           hidden_size: 64
+20:11:46.409: - INFO:                           EPS_START: 1.0
+20:11:46.409: - INFO:                           EPS_END: 0.05
+20:11:46.409: - INFO:                           EPS_DECAY: 3001
+20:11:46.409: - INFO:                           TARGET_UPDATE: 3000
+20:11:46.409: - INFO:                           memory_size: 10000000
+20:11:46.409: - INFO:                           batch_size: 256
+20:11:46.409: - INFO:                           num_episodes: 10
+20:11:46.409: - INFO:                           num_trials: 1
+20:11:46.409: - INFO:                           action_space: 4
+20:11:46.409: - INFO:                           lr: 0.001
+20:11:46.409: - INFO:                           gamma: 1.0
+20:11:46.409: - INFO:                           total_steps: 3001
+20:11:46.409: - INFO:                           burning: 3000
+20:11:46.409: - INFO:                           start_learn_thresh: 1000
+20:11:46.409: - INFO:                           no_switches: False
+20:11:46.410: - INFO:                           l1: 0.01
+20:11:46.410: - INFO:                           l2: 0.01
+20:11:46.410: - INFO:                           rho: 1.0
+20:11:46.410: - INFO: cuda available False device count 0
+20:11:46.410: - INFO: Running on cpu
+20:11:46.420: - INFO: trial 0
+20:11:46.506: - INFO: Terminating episode: count 100 steps_done 100 rewards -2.00 eps_threshold 1.00
+20:11:46.592: - INFO: Terminating episode: count 100 steps_done 200 rewards -4.00 eps_threshold 1.00
+20:11:46.681: - INFO: Terminating episode: count 100 steps_done 300 rewards -2.00 eps_threshold 1.00
+20:11:46.768: - INFO: Terminating episode: count 100 steps_done 400 rewards 0.00 eps_threshold 1.00
+20:11:46.856: - INFO: Terminating episode: count 100 steps_done 500 rewards 0.00 eps_threshold 1.00
+20:11:46.941: - INFO: Terminating episode: count 100 steps_done 600 rewards 0.00 eps_threshold 1.00
+20:11:47.024: - INFO: Terminating episode: count 100 steps_done 700 rewards -2.00 eps_threshold 1.00
+20:11:47.109: - INFO: Terminating episode: count 100 steps_done 800 rewards -2.00 eps_threshold 1.00
+20:11:47.193: - INFO: Terminating episode: count 100 steps_done 900 rewards -4.00 eps_threshold 1.00
+20:11:57.444: - INFO: Terminating episode: count 100 steps_done 1000 rewards 0.00 eps_threshold 1.00
