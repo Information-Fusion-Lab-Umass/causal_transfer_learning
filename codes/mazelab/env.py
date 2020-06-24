@@ -39,9 +39,12 @@ class BaseEnv(gym.Env, ABC):
         img = np.asarray(img).astype(np.uint8)
         img_width, img_height = img.shape[:2]
         ratio = max_width/img_width
-        img = Image.fromarray(img).resize([int(ratio*img_width), int(ratio*img_height)])
+        img = cv2.resize(img, dsize = (int(ratio*img_width), int(ratio*img_height)), interpolation = cv2.INTER_NEAREST)
+        
+        # # img = Image.fromarray(img).resize([int(ratio*img_width), int(ratio*img_height)])
         # plt.imshow(img)
-        # plt.show(img)
+        # plt.show()
+        # plt.close()
         img = np.asarray(img)
 
         if mode == 'rgb_array':

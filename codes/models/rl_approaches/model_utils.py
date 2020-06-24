@@ -54,6 +54,7 @@ def get_input_data(X):
 
 def plot_rewards(rewards, plot_name, std_error = False):
     n_trials, n_episodes = rewards.shape
+    
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     mean = np.mean(rewards, axis = 0)
@@ -62,6 +63,12 @@ def plot_rewards(rewards, plot_name, std_error = False):
     plt.plot(N, mean, label = "DQN")
     if std_error == True:
     	plt.fill_between(N, mean - std, mean + std, color='gray', alpha=0.2)
+    xmin = np.min(N) - 1
+    xmax = np.max(N) + 1
+    ymin = np.min(mean - std) - 0.5
+    ymax = np.max(mean + std) + 0.5
+    plt.axis([xmin, xmax, ymin, ymax])
+    print(np.min(mean), np.max(mean))
     # plt.plot(N, mean+std)
     # plt.plot(np.arange(n_episodes), np.mean(rewards, axis = 0))
     # plt.title("Q-learning rewards")
