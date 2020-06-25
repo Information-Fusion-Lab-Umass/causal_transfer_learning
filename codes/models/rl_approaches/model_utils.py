@@ -284,7 +284,7 @@ def execute_actions(models, start_state, store_state, seq_actions, gamma, env):
             # print("Won the game in {} steps total_rewards {} actual rewards {} switches {} prizes {}. Resetting the game!".format(i, total_rewards, actual_rewards, env.switches, env.prize_count))
             env.reset()
             break
-    return actual_rewards
+    return actual_rewards, i
 
         
 

@@ -180,8 +180,9 @@ env, curr_state, curr_X = make_env(args)
 n_actions = env.action_space.n
 
 def rollout_causal_models(models, start_state, env, n_actions, K, H, gamma):
-    seq_actions = np.zeros((K,H))
+    seq_actions = np.zeros((K,H), dtype = "int")
     rewards = np.zeros(K)
+    counts = np.zeros(K, dtype = int)
     M, N = env.maze.x.shape
   
     maze = np.copy(env.maze.x)
@@ -189,10 +190,10 @@ def rollout_causal_models(models, start_state, env, n_actions, K, H, gamma):
     for k in range(K):
         env.reset_state(store_state)
         seq_actions[k] = np.random.choice(np.arange(n_actions), size = H)
-        rewards[k] = execute_actions(models, start_state, store_state, seq_actions[k], gamma, env)
+        rewards[k], counts[k] = execute_actions(models, start_state, store_state, seq_actions[k], gamma, env)
     env.reset_state(store_state)
     idx = np.argmax(rewards)
-    return int(seq_actions[idx][0])
+    return seq_actions[idx][0:counts[idx]]
 
 # # plt.imshow(state.detach().numpy().transpose(1,2,0))
 # # plt.show()
@@ -232,68 +233,79 @@ if args.mode in ["train", "both"]:
         TARGET_UPDATE = args.TARGET_UPDATE
         count = 0
         discount_factor = 1
-        for i_episode in tqdm(range(args.total_steps)):
+        total_episodes = 0
+        pbar = tqdm(total = args.total_steps+1)
+        while steps_done < args.total_steps:
             count = count + 1
-            
             if not args.mbmf or steps_done <= args.causal_update:
                 action, eps_threshold = select_action(policy_net, curr_state, args)
-
+                action_sequence = [action]
+                pbar.update(1)
 
             if args.mbmf and steps_done > args.causal_update:
                 if models is None:
                     models = causal_model(inp, args.l1, args.l2, args.rho, model_dir, n_actions, train_frac = 90)
                 state = {"curr_oo" : curr_X, "next_oo" : curr_X}
-                action = rollout_causal_models(models, state, env, n_actions, args.K, args.H, args.gamma)
-                steps_done += 1
-               
+                action_sequence = rollout_causal_models(models, state, env, n_actions, args.K, args.H, args.gamma)
+                steps_done = steps_done + len(action_sequence)
+                pbar.update(len(action_sequence))
+            N = len(action_sequence)
+            
+            for seq in range(N):
+                action = action_sequence[0]
+                next_obs, reward, done, info = env.step(action)
+                next_objects = env.maze.objects
+                next_X = get_oo_repr(count, next_objects, action, reward,n_actions)
+                next_state = next_X[:,indices]
+                model_X = model_based_X(curr_X[:,1:], next_X[:,1:])
+                inp.append(model_X)
+                total_rewards = total_rewards + discount_factor*reward
+                discount_factor = discount_factor * args.gamma
+                next_state = torch.tensor(next_state, device = args.device, dtype = torch.float32).reshape(1,-1)
+                reward = torch.tensor(reward, device = args.device, dtype = torch.float32).reshape(1,1)
+                action = torch.tensor(action, device = args.device, dtype = torch.long).reshape(1,1)
+                # Store the transition in memory
 
-            next_obs, reward, done, info = env.step(action)
-            next_objects = env.maze.objects
-            next_X = get_oo_repr(count, next_objects, action, reward,n_actions)
-            next_state = next_X[:,indices]
-            model_X = model_based_X(curr_X[:,1:], next_X[:,1:])
-            inp.append(model_X)
-            total_rewards = total_rewards + discount_factor*reward
-            discount_factor = discount_factor * args.gamma
-            next_state = torch.tensor(next_state, device = args.device, dtype = torch.float32).reshape(1,-1)
-            reward = torch.tensor(reward, device = args.device, dtype = torch.float32).reshape(1,1)
-            action = torch.tensor(action, device = args.device, dtype = torch.long).reshape(1,1)
-            # Store the transition in memory
+                if steps_done >= args.start_learn_thresh:
+                    loss = optimize_model(optimizer, policy_net, target_net, memory, args.batch_size, args.device, args.gamma)
+                    # loss_vector[steps_done - args.burning] = loss.item()
 
-            if steps_done >= args.start_learn_thresh:
-                loss = optimize_model(optimizer, policy_net, target_net, memory, args.batch_size, args.device, args.gamma)
-                # loss_vector[steps_done - args.burning] = loss.item()
-
-            if args.use_causal_model and steps_done >= args.start_learn_thresh and i_episode % args.causal_update == 0:
-                models = causal_model(inp, args.l1, args.l2, args.rho, model_dir, n_actions, train_frac = 90)
-                
-                #logger.info("Step {} average Q-learning loss {:.4f}".format(steps_done, loss.item()))
-            if done:
-                #logger.info("Winning Reward {}".format(reward))
-                logger.info("Won the game: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
-                memory.push(curr_state, action, reward, next_state)
-                env, curr_state, curr_X = make_env(args)
-                curr_objects = env.maze.objects
-                reward_vector.append(total_rewards)
-                count = 0
-                total_rewards = 0
-                discount_factor = 1
-            else:
-                memory.push(curr_state, action, reward, next_state)
-                if count >= args.max_episode_length:
-                    logger.info("Terminating episode: count {} steps_done {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_rewards, eps_threshold))
+                if args.use_causal_model and steps_done >= args.start_learn_thresh and steps_done % args.causal_update == 0:
+                    models = causal_model(inp, args.l1, args.l2, args.rho, model_dir, n_actions, train_frac = 90)
+                    
+                    #logger.info("Step {} average Q-learning loss {:.4f}".format(steps_done, loss.item()))
+                if done:
+                    #logger.info("Winning Reward {}".format(reward))
+                    logger.info("Won the game: count {} steps_done {} episodes {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_episodes, total_rewards, eps_threshold))
+                    memory.push(curr_state, action, reward, next_state)
                     env, curr_state, curr_X = make_env(args)
                     curr_objects = env.maze.objects
                     reward_vector.append(total_rewards)
                     count = 0
                     total_rewards = 0
                     discount_factor = 1
+                    total_episodes = total_episodes + 1
                 else:
-                    curr_objects = next_objects
-                    curr_state = next_state
-                    curr_X = next_X
-            if i_episode % TARGET_UPDATE == 0 and steps_done >= TARGET_UPDATE:
-                target_net.load_state_dict(policy_net.state_dict())
+                    memory.push(curr_state, action, reward, next_state)
+                    if count >= args.max_episode_length:
+                        logger.info("Terminating episode: count {} steps_done {} episodes {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_episodes, total_rewards, eps_threshold))
+                        env, curr_state, curr_X = make_env(args)
+                        curr_objects = env.maze.objects
+                        reward_vector.append(total_rewards)
+                        count = 0
+                        total_rewards = 0
+                        discount_factor = 1
+                        total_episodes = total_episodes + 1
+                    else:
+                        curr_objects = next_objects
+                        curr_state = next_state
+                        curr_X = next_X
+                if steps_done % TARGET_UPDATE == 0 and steps_done >= TARGET_UPDATE:
+                    target_net.load_state_dict(policy_net.state_dict())
+                
+                if total_episodes >= 6000:
+                    break
+        pbar.close()
 
         if args.save:
             torch.save(policy_net.state_dict(), model_dir + "policy_net_DQN_{}_{}".format(args.gamma, args.use_causal_model))

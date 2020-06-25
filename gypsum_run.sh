@@ -8,5 +8,5 @@
 #SBATCH --mem-per-cpu=20240    # Memory in MB per cpu allocated
 #SBATCH --gres gpu:4
 
-# cd /home/ppruthi/causal_transfer_learning/
-PYTHONPATH=$PWD python ./codes/models/rl_approaches/DQN_main.py --height 10 --width 10 --render 0 --game_type trigger_non_markov --mode train --num-trials 1 --gamma 0.99 --num-trials 1 --num-episodes 1 --render 0
+cd /home/ppruthi/causal_transfer_learning/
+PYTHONPATH=$PWD python ./codes/models/rl_approaches/DQN_main.py --height 10 --width 10 --render 0 --game_type trigger_non_markov --mode train --num-trials 1 --gamma 0.99 --use_causal_model  --causal_update 3000 --H 100 --K 5 --mbmf
