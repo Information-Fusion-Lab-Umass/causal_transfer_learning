@@ -68,6 +68,7 @@ parser.add_argument('--causal_update', type=int, default=2000, help='Number of s
 parser.add_argument('--save', action = 'store_false', help='save models')
 parser.add_argument('--H', type=int, default=1, help='Horizon for planning')
 parser.add_argument('--K', type=int, default=1, help='Total number of candidates for random shooting')
+parser.add_argument('--mbmf', action = 'store_true', help='Enable model-based and model free learning')
 
 args = parser.parse_args()
 
@@ -181,13 +182,17 @@ n_actions = env.action_space.n
 def rollout_causal_models(models, start_state, env, n_actions, K, H, gamma):
     seq_actions = np.zeros((K,H))
     rewards = np.zeros(K)
+    M, N = env.maze.x.shape
+  
+    maze = np.copy(env.maze.x)
+    store_state = load_state(env, maze) 
     for k in range(K):
+        env.reset_state(store_state)
         seq_actions[k] = np.random.choice(np.arange(n_actions), size = H)
-        rewards[k] = execute_actions(models, start_state, seq_actions[k], gamma, env)
-
-    
-
-
+        rewards[k] = execute_actions(models, start_state, store_state, seq_actions[k], gamma, env)
+    env.reset_state(store_state)
+    idx = np.argmax(rewards)
+    return int(seq_actions[idx][0])
 
 # # plt.imshow(state.detach().numpy().transpose(1,2,0))
 # # plt.show()
@@ -221,6 +226,7 @@ if args.mode in ["train", "both"]:
         # Collect random data for initial burning period of 5000
         steps_done = 0
         total_rewards = 0
+        models = None
         # state = preprocess_image(env.reset(), args.device)
         curr_objects = env.maze.objects
         TARGET_UPDATE = args.TARGET_UPDATE
@@ -228,11 +234,19 @@ if args.mode in ["train", "both"]:
         discount_factor = 1
         for i_episode in tqdm(range(args.total_steps)):
             count = count + 1
-            # if args.model_free or steps_done <= args.start_learn_thresh:
-            action, eps_threshold = select_action(policy_net, curr_state, args)
+            
+            if not args.mbmf or steps_done <= args.causal_update:
+                action, eps_threshold = select_action(policy_net, curr_state, args)
 
-            # if args.mbmf:
-            #     action = rollout_causal_model(models)
+
+            if args.mbmf and steps_done > args.causal_update:
+                if models is None:
+                    models = causal_model(inp, args.l1, args.l2, args.rho, model_dir, n_actions, train_frac = 90)
+                state = {"curr_oo" : curr_X, "next_oo" : curr_X}
+                action = rollout_causal_models(models, state, env, n_actions, args.K, args.H, args.gamma)
+                steps_done += 1
+               
+
             next_obs, reward, done, info = env.step(action)
             next_objects = env.maze.objects
             next_X = get_oo_repr(count, next_objects, action, reward,n_actions)
@@ -250,11 +264,9 @@ if args.mode in ["train", "both"]:
                 loss = optimize_model(optimizer, policy_net, target_net, memory, args.batch_size, args.device, args.gamma)
                 # loss_vector[steps_done - args.burning] = loss.item()
 
-            if args.use_causal_model and steps_done >= args.causal_update and i_episode % args.causal_update == 0 :
-                state = {"curr_oo" : next_X, "next_oo" : next_X}
-                print("Using causal model")
+            if args.use_causal_model and steps_done >= args.start_learn_thresh and i_episode % args.causal_update == 0:
                 models = causal_model(inp, args.l1, args.l2, args.rho, model_dir, n_actions, train_frac = 90)
-                # rollout_causal_models(models, state, env, n_actions, args.K, args.H, args.gamma)
+                
                 #logger.info("Step {} average Q-learning loss {:.4f}".format(steps_done, loss.item()))
             if done:
                 #logger.info("Winning Reward {}".format(reward))
@@ -330,7 +342,6 @@ if args.mode in ["eval", "both"]:
                 count = count + 1
                 total_rewards = total_rewards + discount_factor* reward
                 discount_factor = discount_factor * args.gamma
-                print(count, action)
                 curr_state = next_state
                 if args.render:
                     env.render()

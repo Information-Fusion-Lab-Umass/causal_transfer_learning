@@ -13,8 +13,7 @@ from copy import deepcopy
 class SourceEnv(BaseEnv):
     def __init__(self, **kwargs):
         super().__init__()
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        self.__dict__.update(kwargs)
 
         if not self.invert:
             self.maze = SourceMaze(**kwargs)
@@ -71,6 +70,17 @@ class SourceEnv(BaseEnv):
         # # self.maze.objects.free.positions = self.initial_positions["free"]
         # self.maze.objects.switch.positions = self.initial_positions["switch"]
         # self.maze.objects.prize.positions = self.initial_positions["prize"]
+        if self.return_image:
+            return self.render(mode = 'rgb_array')
+        else:
+            return self.maze.to_value()
+
+    def reset_state(self, state):
+        self.switches = state["n_switches"]
+        self.prize_count = state["n_prizes"]
+        self.maze.x = np.copy(state["x"])
+        self.maze.reset_maze(state["agent"][0])
+        
         if self.return_image:
             return self.render(mode = 'rgb_array')
         else:

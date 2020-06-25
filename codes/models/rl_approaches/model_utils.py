@@ -15,7 +15,7 @@ from codes.utils import *
 import os
 import torch
 import pandas as pd
-from copy import copy
+from copy import copy, deepcopy
 from codes.data.oo_representation import *
 from tqdm import tqdm
 
@@ -144,7 +144,6 @@ def causal_model(inp, l1, l2, rho, model_dir, n_actions, train_frac = 90):
         X_all[X_all[:,15] < 0, 15] =   X_all[X_all[:,15] < 0, 15] * 10
 
         df = pd.DataFrame(data=X_all, columns= s_vars)
-        print(df['r_t1'].value_counts())
             
         idx = np.arange(X_all.shape[0])
         np.random.shuffle(idx)
@@ -169,7 +168,6 @@ def causal_model(inp, l1, l2, rho, model_dir, n_actions, train_frac = 90):
         model = NotearsMLP(dims=[X_tr.shape[1], 10, 1], bias=True)
         model_name = model_dir + "causal_models/{}_l1_{:.2f}_l2_{:.2f}_rho_{:.2f}".format(actions[i], l1, l2, rho)
         if os.path.exists(model_name):
-            print("============Loading causal model=================")
             model.load_state_dict(torch.load(model_name))
         W_est = notears_nonlinear(model, X_tr, Z_tr, X_tr_orig, model_name = model_name, rho = rho, lambda1=l1, lambda2=l2)
 
@@ -187,12 +185,12 @@ def causal_model(inp, l1, l2, rho, model_dir, n_actions, train_frac = 90):
             test_loss = squared_loss(test_pred, X_te_orig_torch)
 
             X_eng = analyze(X_tr_orig_torch[check[0]].reshape(1,-1))
-            print(len(text_vars), X_eng.shape, train_pred.shape)
-            print("Train loss {}".format(train_loss.item()))
-            print("Test loss {}".format(test_loss.item()))
-            print("============== Action {} ==================".format(actions[i]))
-            for j in range(X_tr_torch.shape[1]):
-                print(s_vars[j], X_eng[0, j], train_pred[check[0], j].item())
+            # print(len(text_vars), X_eng.shape, train_pred.shape)
+            # print("Train loss {}".format(train_loss.item()))
+            # print("Test loss {}".format(test_loss.item()))
+            # print("============== Action {} ==================".format(actions[i]))
+            # for j in range(X_tr_torch.shape[1]):
+            #     print(s_vars[j], X_eng[0, j], train_pred[check[0], j].item())
 
         W = model.fc1_to_adj()
         est_plot_name = model_dir + "w_est_{}.png".format(actions[i])
@@ -225,7 +223,21 @@ def get_model_state(model_X):
 
     return obj_tr_torch, Z_tr_torch, obj_tr_orig_torch
 
-def execute_actions(models, start_state, seq_actions, gamma, env):
+def clip(x):
+    thresh = 5
+    if abs(x) <= 5: 
+        return 0
+    else:
+        return np.sign(x)
+
+def load_state(env, maze):
+    return {"x": deepcopy(maze),
+            "agent": env.maze.objects.agent.positions,
+            "n_switches": env.switches, 
+            "n_prizes": env.prize_count}
+
+
+def execute_actions(models, start_state, store_state, seq_actions, gamma, env):
     H = len(seq_actions)
     total_rewards = 0
     actual_rewards = 0
@@ -235,12 +247,15 @@ def execute_actions(models, start_state, seq_actions, gamma, env):
     xtr, ztr, x = get_model_state(model_X)
     discount_factor = 1.0
     n_actions =  env.action_space.n
-    for i in tqdm(range(H)):
+    for i in range(H):
         action = int(seq_actions[i])
         a = actions[action]
         model = models[a]
         pred = model(xtr, ztr)
-        pred_reward = pred[0, 15].item()
+        pred = pred.detach().numpy()
+        pred_reward = pred[0, 15]
+        pred_reward = clip(pred_reward)
+        # pred[0, 15] = pred_reward
         total_rewards = total_rewards + discount_factor * pred_reward
         X_eng = analyze(x[0].reshape(1,-1))
        
@@ -257,19 +272,19 @@ def execute_actions(models, start_state, seq_actions, gamma, env):
 
         # Analysis
        
-        print(len(text_vars), X_eng.shape, xtr.shape)
-        print("============== Executing Action {}".format(a))
-        for j in range(xtr.shape[1]):
-            print(s_vars[j], X_eng[0, j], Xa_eng[0,j], pred[0, j].item())
+        # print(len(text_vars), X_eng.shape, xtr.shape)
+        # print("============== Executing Action {}".format(a))
+        # for j in range(xtr.shape[1]):
+        #     print(s_vars[j], X_eng[0, j], Xa_eng[0,j], pred[0, j])
         discount_factor = discount_factor * gamma
         curr_X = next_X
         model_X = model_based_X(curr_X[:,1:], next_X[:,1:])
         xtr, ztr, x = get_model_state(model_X)
         if done:
-            print("Won the game in {} steps {} actual rewards {}. Resetting the game!".format(i, total_rewards, actual_rewards))
+            # print("Won the game in {} steps total_rewards {} actual rewards {} switches {} prizes {}. Resetting the game!".format(i, total_rewards, actual_rewards, env.switches, env.prize_count))
+            env.reset()
             break
-
-    print(total_rewards, actual_rewards)
+    return actual_rewards
 
         
 

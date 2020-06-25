@@ -9,8 +9,7 @@ from .object import Object
 
 class BaseMaze(ABC):
     def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        self.__dict__.update(kwargs)
 
         objects = self.make_objects()
         assert all([isinstance(obj, Object)] for obj in objects)
