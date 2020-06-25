@@ -57,9 +57,9 @@ def basic_maze(width, height, total_switches, total_prizes, random_obstacles, n_
         x[4,5] = 2
         x[6,7] = 2
 
-        f = np.argwhere(x == 0)
-        start = np.random.choice(len(f), size = 1)
-        start_idx = [f[i] for i in start]
+    f = np.argwhere(x == 0)
+    start = np.random.choice(len(f), size = 1)
+    start_idx = [f[i] for i in start]
 
 
 

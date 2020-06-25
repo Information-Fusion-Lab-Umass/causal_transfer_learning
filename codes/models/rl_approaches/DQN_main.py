@@ -24,6 +24,13 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from codes.data.oo_representation import *
 
+actions = {
+0: "up",
+1: "down",
+2: "left",
+3: "right",
+}
+
 # Arguments
 parser = argparse.ArgumentParser(description="causality")
 parser.add_argument('--env', default="source", help='type of environment')
@@ -58,6 +65,9 @@ parser.add_argument('--l2', default = 0.01, type = float, help = 'lambda2: penal
 parser.add_argument('--rho', default = 1.0, type = float, help = 'rho: penalty for regularizer for acyclicity')
 parser.add_argument('--use_causal_model', action = 'store_true', help='Enable causal model')
 parser.add_argument('--causal_update', type=int, default=2000, help='Number of steps for updating the causal model')
+parser.add_argument('--save', action = 'store_false', help='save models')
+parser.add_argument('--H', type=int, default=1, help='Horizon for planning')
+parser.add_argument('--K', type=int, default=1, help='Total number of candidates for random shooting')
 
 args = parser.parse_args()
 
@@ -100,14 +110,6 @@ if args.env == "target":
 heights = np.arange(5,80, 5)
 gym.envs.register(id = env_id, entry_point = SourceEnv, max_episode_steps = 1000)
 
-
-def model_based_X(curr_X, next_X):
-    N = curr_X.shape[1]
-    model_X = np.zeros((1, N+2))
-    model_X[:,:N] = curr_X[:,:N]
-    model_X[:,N:N+2] = next_X[:,0:2]
-    model_X[:, 15:17] = next_X[:,15:17]
-    return model_X
 
 def preprocess_image(image, device):
     image = cv2.resize(image, (40, 40), interpolation=cv2.INTER_LINEAR).reshape(40,40,3).transpose(2,0,1)
@@ -176,6 +178,17 @@ logger.info("Running on {}".format(args.device))
 env, curr_state, curr_X = make_env(args)
 n_actions = env.action_space.n
 
+def rollout_causal_models(models, start_state, env, n_actions, K, H, gamma):
+    seq_actions = np.zeros((K,H))
+    rewards = np.zeros(K)
+    for k in range(K):
+        seq_actions[k] = np.random.choice(np.arange(n_actions), size = H)
+        rewards[k] = execute_actions(models, start_state, seq_actions[k], gamma, env)
+
+    
+
+
+
 # # plt.imshow(state.detach().numpy().transpose(1,2,0))
 # # plt.show()
 # # plt.close()
@@ -202,7 +215,8 @@ if args.mode in ["train", "both"]:
         optimizer = optim.RMSprop(policy_net.parameters(), lr = args.lr)
         memory = ReplayMemory(args.memory_size)
         inp = []
-        loss_vector = np.zeros(args.total_steps - args.burning + 1)
+        if args.total_steps >= args.burning:
+            loss_vector = np.zeros(args.total_steps - args.burning + 1)
         reward_vector = []
         # Collect random data for initial burning period of 5000
         steps_done = 0
@@ -214,7 +228,11 @@ if args.mode in ["train", "both"]:
         discount_factor = 1
         for i_episode in tqdm(range(args.total_steps)):
             count = count + 1
+            # if args.model_free or steps_done <= args.start_learn_thresh:
             action, eps_threshold = select_action(policy_net, curr_state, args)
+
+            # if args.mbmf:
+            #     action = rollout_causal_model(models)
             next_obs, reward, done, info = env.step(action)
             next_objects = env.maze.objects
             next_X = get_oo_repr(count, next_objects, action, reward,n_actions)
@@ -232,9 +250,11 @@ if args.mode in ["train", "both"]:
                 loss = optimize_model(optimizer, policy_net, target_net, memory, args.batch_size, args.device, args.gamma)
                 # loss_vector[steps_done - args.burning] = loss.item()
 
-            if args.use_causal_model and steps_done >= args.causal_update:
+            if args.use_causal_model and steps_done >= args.causal_update and i_episode % args.causal_update == 0 :
+                state = {"curr_oo" : next_X, "next_oo" : next_X}
                 print("Using causal model")
                 models = causal_model(inp, args.l1, args.l2, args.rho, model_dir, n_actions, train_frac = 90)
+                # rollout_causal_models(models, state, env, n_actions, args.K, args.H, args.gamma)
                 #logger.info("Step {} average Q-learning loss {:.4f}".format(steps_done, loss.item()))
             if done:
                 #logger.info("Winning Reward {}".format(reward))
@@ -263,12 +283,13 @@ if args.mode in ["train", "both"]:
             if i_episode % TARGET_UPDATE == 0 and steps_done >= TARGET_UPDATE:
                 target_net.load_state_dict(policy_net.state_dict())
 
-        # torch.save(memory, data_dir + "replay_buffer")
-        torch.save(policy_net.state_dict(), model_dir + "policy_net_DQN")
-        torch.save(target_net.state_dict(), model_dir + "target_net_DQN")
+        if args.save:
+            torch.save(policy_net.state_dict(), model_dir + "policy_net_DQN_{}_{}".format(args.gamma, args.use_causal_model))
+            torch.save(target_net.state_dict(), model_dir + "target_net_DQN_{}_{}".format(args.gamma, args.use_causal_model))
         all_rewards.append(reward_vector)
     rewards_array = np.array(all_rewards)
-    np.savez(plot_dir + "dqn_train_rewards_{}.npz".format(args.gamma), r = rewards_array)
+    if args.save:
+        np.savez(plot_dir + "dqn_train_rewards_{}.npz".format(args.gamma), r = rewards_array)
 
 
 
@@ -287,10 +308,10 @@ if args.mode in ["eval", "both"]:
         for j in range(min_len):
             result[i,j] = vec[i][j]
 
+    plot_rewards(result, plot_dir + "dqn_train_rewards_{}_{}.pdf".format(args.gamma, args.use_causal_model), args.gamma, std_error = True)
+
     policy_net = DQN(args).to(device=args.device)
-    policy_net.load_state_dict(torch.load(model_dir + "policy_net_DQN", map_location = torch.device(args.device)))
-    train_reward_vec = np.load(plot_dir + "dqn_loss_rewards.npz")['r'].reshape(1,-1)
-    loss_vec = np.load(plot_dir + "dqn_loss_rewards.npz")['l'].reshape(1,-1)
+    policy_net.load_state_dict(torch.load(model_dir + "target_net_DQN_{}_{}".format(args.gamma, args.use_causal_model), map_location = torch.device(args.device)))
     rewards = np.zeros((args.num_trials, args.num_episodes))
     for trial in tqdm(range(args.num_trials)):
         for i_episode in tqdm(range(args.num_episodes)):
@@ -310,13 +331,13 @@ if args.mode in ["eval", "both"]:
                 total_rewards = total_rewards + discount_factor* reward
                 discount_factor = discount_factor * args.gamma
                 print(count, action)
+                curr_state = next_state
                 if args.render:
                     env.render()
                     time.sleep(0.1)
-                    # plt.savefig(img_dir + "image_{}.png".format(count))
                 if done:
-                    logger.info("Won the game in {} steps. Resetting the game!".format(step))
+                    print("Won the game in {} steps {}. Resetting the game!".format(step, total_rewards))
                     break
             rewards[trial, i_episode] = total_rewards
-            curr_state = next_state
+            
             logger.info("Trial {} Episode {} rewards {}".format(trial, i_episode, rewards[trial, i_episode]))

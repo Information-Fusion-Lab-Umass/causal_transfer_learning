@@ -133,6 +133,7 @@ for i in range(4):
 
     X_tr, X_tr_orig, Z_tr = get_input_data(X_train)
     X_te, X_te_orig, Z_te = get_input_data(X_test)
+    print(X_test.shape)
 
     model = NotearsMLP(dims=[X_tr.shape[1], 10, 1], bias=True)
     model_name = model_dir + "{}_l1_{:.2f}_l2_{:.2f}_rho_{:.2f}".format(actions[i], args.l1, args.l2, args.rho)
