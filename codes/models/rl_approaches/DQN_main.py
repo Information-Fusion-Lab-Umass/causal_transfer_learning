@@ -188,9 +188,11 @@ def rollout_causal_models(models, start_state, env, n_actions, K, H, gamma):
     maze = np.copy(env.maze.x)
     store_state = load_state(env, maze) 
     for k in range(K):
+        # print("========== candidate {}".format(k))
         env.reset_state(store_state)
         seq_actions[k] = np.random.choice(np.arange(n_actions), size = H)
-        rewards[k], counts[k] = execute_actions(models, start_state, store_state, seq_actions[k], gamma, env)
+        rewards[k], count = execute_actions(models, start_state, store_state, seq_actions[k], gamma, env)
+        counts[k] = count
     env.reset_state(store_state)
     idx = np.argmax(rewards)
     return seq_actions[idx][0:counts[idx]]
@@ -249,11 +251,16 @@ if args.mode in ["train", "both"]:
                 action_sequence = rollout_causal_models(models, state, env, n_actions, args.K, args.H, args.gamma)
                 steps_done = steps_done + len(action_sequence)
                 pbar.update(len(action_sequence))
+                # print(env.maze.x, env.maze.objects.agent.positions)
             N = len(action_sequence)
             
+            
             for seq in range(N):
-                action = action_sequence[0]
+                action = action_sequence[seq]
                 next_obs, reward, done, info = env.step(action)
+                # if args.mbmf and steps_done > args.causal_update:
+                    # print("============ {}/{}========== {} {}".format(seq, N, steps_done, done))
+                    
                 next_objects = env.maze.objects
                 next_X = get_oo_repr(count, next_objects, action, reward,n_actions)
                 next_state = next_X[:,indices]
@@ -359,7 +366,7 @@ if args.mode in ["eval", "both"]:
                     env.render()
                     time.sleep(0.1)
                 if done:
-                    print("Won the game in {} steps {}. Resetting the game!".format(step, total_rewards))
+                    # print("Won the game in {} steps {}. Resetting the game!".format(step, total_rewards))
                     break
             rewards[trial, i_episode] = total_rewards
             

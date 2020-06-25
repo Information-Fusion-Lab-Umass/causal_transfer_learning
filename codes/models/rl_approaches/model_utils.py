@@ -247,6 +247,7 @@ def execute_actions(models, start_state, store_state, seq_actions, gamma, env):
     xtr, ztr, x = get_model_state(model_X)
     discount_factor = 1.0
     n_actions =  env.action_space.n
+    # print(env.maze.x, env.maze.objects.agent.positions)
     for i in range(H):
         action = int(seq_actions[i])
         a = actions[action]
@@ -284,7 +285,12 @@ def execute_actions(models, start_state, store_state, seq_actions, gamma, env):
             # print("Won the game in {} steps total_rewards {} actual rewards {} switches {} prizes {}. Resetting the game!".format(i, total_rewards, actual_rewards, env.switches, env.prize_count))
             env.reset()
             break
-    return actual_rewards, i
+    if done:
+        count = i+1
+    else:
+        count = H
+        
+    return actual_rewards, count
 
         
 

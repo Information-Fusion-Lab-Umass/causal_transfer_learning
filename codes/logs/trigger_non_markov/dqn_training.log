@@ -1,0 +1,167 @@
+16:07:19.681: - INFO:                           Options
+16:07:19.681: - INFO:                           env: source
+16:07:19.681: - INFO:                           random_obstacles: 0
+16:07:19.681: - INFO:                           width: 10
+16:07:19.682: - INFO:                           height: 10
+16:07:19.682: - INFO:                           render: 0
+16:07:19.682: - INFO:                           game_type: trigger_non_markov
+16:07:19.682: - INFO:                           mode: train
+16:07:19.682: - INFO:                           disable_cuda: False
+16:07:19.682: - INFO:                           seed: 123
+16:07:19.682: - INFO:                           max_episode_length: 100
+16:07:19.682: - INFO:                           history_length: 1
+16:07:19.682: - INFO:                           hidden_size: 64
+16:07:19.682: - INFO:                           EPS_START: 1.0
+16:07:19.682: - INFO:                           EPS_END: 0.05
+16:07:19.682: - INFO:                           EPS_DECAY: 250000
+16:07:19.682: - INFO:                           TARGET_UPDATE: 2000
+16:07:19.682: - INFO:                           memory_size: 10000000
+16:07:19.682: - INFO:                           batch_size: 256
+16:07:19.682: - INFO:                           num_episodes: 100
+16:07:19.682: - INFO:                           num_trials: 1
+16:07:19.682: - INFO:                           action_space: 4
+16:07:19.682: - INFO:                           lr: 0.001
+16:07:19.682: - INFO:                           gamma: 0.99
+16:07:19.682: - INFO:                           total_steps: 250000
+16:07:19.682: - INFO:                           burning: 3000
+16:07:19.682: - INFO:                           start_learn_thresh: 1000
+16:07:19.682: - INFO:                           no_switches: False
+16:07:19.682: - INFO:                           l1: 0.01
+16:07:19.682: - INFO:                           l2: 0.01
+16:07:19.683: - INFO:                           rho: 1.0
+16:07:19.683: - INFO:                           use_causal_model: True
+16:07:19.683: - INFO:                           causal_update: 3000
+16:07:19.683: - INFO:                           save: True
+16:07:19.683: - INFO:                           H: 100
+16:07:19.683: - INFO:                           K: 5
+16:07:19.683: - INFO:                           mbmf: True
+16:07:19.685: - INFO: cuda available False device count 0
+16:07:19.685: - INFO: Running on cpu
+16:07:19.692: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:19.697: - INFO: trial 0
+16:07:19.802: - INFO: Terminating episode: count 100 steps_done 100 episodes 0 rewards -3.52 eps_threshold 1.00
+16:07:19.804: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:19.907: - INFO: Terminating episode: count 100 steps_done 200 episodes 1 rewards -7.53 eps_threshold 1.00
+16:07:19.908: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:20.028: - INFO: Terminating episode: count 100 steps_done 300 episodes 2 rewards -0.96 eps_threshold 1.00
+16:07:20.030: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:20.159: - INFO: Terminating episode: count 100 steps_done 400 episodes 3 rewards -1.46 eps_threshold 1.00
+16:07:20.161: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:20.291: - INFO: Terminating episode: count 100 steps_done 500 episodes 4 rewards -0.57 eps_threshold 1.00
+16:07:20.293: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:20.421: - INFO: Terminating episode: count 100 steps_done 600 episodes 5 rewards -3.58 eps_threshold 1.00
+16:07:20.423: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:20.547: - INFO: Terminating episode: count 100 steps_done 700 episodes 6 rewards -1.84 eps_threshold 1.00
+16:07:20.551: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:20.671: - INFO: Terminating episode: count 100 steps_done 800 episodes 7 rewards 0.00 eps_threshold 1.00
+16:07:20.673: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:20.787: - INFO: Terminating episode: count 100 steps_done 900 episodes 8 rewards -0.73 eps_threshold 1.00
+16:07:20.789: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:20.928: - INFO: Terminating episode: count 100 steps_done 1000 episodes 9 rewards 0.00 eps_threshold 1.00
+16:07:20.932: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:21.924: - INFO: Terminating episode: count 100 steps_done 1100 episodes 10 rewards -0.39 eps_threshold 1.00
+16:07:21.928: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:22.696: - INFO: Terminating episode: count 100 steps_done 1200 episodes 11 rewards -1.26 eps_threshold 1.00
+16:07:22.700: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:23.603: - INFO: Terminating episode: count 100 steps_done 1300 episodes 12 rewards -0.48 eps_threshold 1.00
+16:07:23.609: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:24.383: - INFO: Terminating episode: count 100 steps_done 1400 episodes 13 rewards 0.00 eps_threshold 1.00
+16:07:24.387: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:25.193: - INFO: Terminating episode: count 100 steps_done 1500 episodes 14 rewards -5.05 eps_threshold 1.00
+16:07:25.199: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:25.797: - INFO: Won the game: count 77 steps_done 1577 episodes 15 rewards 0.99 eps_threshold 1.00
+16:07:25.801: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:26.579: - INFO: Terminating episode: count 100 steps_done 1677 episodes 16 rewards -5.24 eps_threshold 1.00
+16:07:26.585: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:27.367: - INFO: Terminating episode: count 100 steps_done 1777 episodes 17 rewards -5.15 eps_threshold 1.00
+16:07:27.371: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:28.161: - INFO: Terminating episode: count 100 steps_done 1877 episodes 18 rewards -6.21 eps_threshold 1.00
+16:07:28.167: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:28.905: - INFO: Terminating episode: count 100 steps_done 1977 episodes 19 rewards 0.40 eps_threshold 1.00
+16:07:28.909: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:29.698: - INFO: Terminating episode: count 100 steps_done 2077 episodes 20 rewards 0.00 eps_threshold 1.00
+16:07:29.702: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:30.489: - INFO: Terminating episode: count 100 steps_done 2177 episodes 21 rewards -2.18 eps_threshold 1.00
+16:07:30.494: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:31.286: - INFO: Terminating episode: count 100 steps_done 2277 episodes 22 rewards -0.59 eps_threshold 1.00
+16:07:31.290: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:32.115: - INFO: Terminating episode: count 100 steps_done 2377 episodes 23 rewards -2.28 eps_threshold 1.00
+16:07:32.122: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:32.910: - INFO: Terminating episode: count 100 steps_done 2477 episodes 24 rewards 0.00 eps_threshold 1.00
+16:07:32.914: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:33.722: - INFO: Terminating episode: count 100 steps_done 2577 episodes 25 rewards -0.96 eps_threshold 1.00
+16:07:33.727: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:34.492: - INFO: Terminating episode: count 100 steps_done 2677 episodes 26 rewards 0.00 eps_threshold 1.00
+16:07:34.496: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:35.241: - INFO: Terminating episode: count 100 steps_done 2777 episodes 27 rewards -4.81 eps_threshold 1.00
+16:07:35.245: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:36.031: - INFO: Terminating episode: count 100 steps_done 2877 episodes 28 rewards 0.00 eps_threshold 1.00
+16:07:36.036: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:36.862: - INFO: Terminating episode: count 100 steps_done 2977 episodes 29 rewards -3.32 eps_threshold 1.00
+16:07:36.867: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]
+16:07:46.052: - INFO: Won the game: count 25 steps_done 3184 episodes 30 rewards -1.15 eps_threshold 1.00
+16:07:46.055: - INFO: Prize positions [[2 2]
+ [4 4]] Switch positions [[4 5]
+ [6 7]]

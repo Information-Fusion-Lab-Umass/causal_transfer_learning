@@ -9,4 +9,4 @@
 #SBATCH --gres gpu:4
 
 cd /home/ppruthi/causal_transfer_learning/
-PYTHONPATH=$PWD python ./codes/models/rl_approaches/DQN_main.py --height 10 --width 10 --render 0 --game_type trigger_non_markov --mode train --num-trials 1 --gamma 0.99 --use_causal_model  --causal_update 3000 --H 100 --K 5 --mbmf
+PYTHONPATH=$PWD python ./codes/models/rl_approaches/DQN_main.py --height 10 --width 10 --render 0 --game_type trigger_non_markov --mode train --num-trials 1 --gamma 0.99 --use_causal_model  --causal_update 3000 --H 100 --max-episode-length 100 --K 5 --mbmf
