@@ -64,11 +64,12 @@ parser.add_argument('--l1', default = 0.01, type = float, help = 'lambda 1: pena
 parser.add_argument('--l2', default = 0.01, type = float, help = 'lambda2: penalty for regularizer')
 parser.add_argument('--rho', default = 1.0, type = float, help = 'rho: penalty for regularizer for acyclicity')
 parser.add_argument('--use_causal_model', action = 'store_true', help='Enable causal model')
-parser.add_argument('--causal_update', type=int, default=2000, help='Number of steps for updating the causal model')
+parser.add_argument('--causal_update', type=int, default=3000, help='Number of steps for updating the causal model')
 parser.add_argument('--save', action = 'store_false', help='save models')
 parser.add_argument('--H', type=int, default=1, help='Horizon for planning')
 parser.add_argument('--K', type=int, default=1, help='Total number of candidates for random shooting')
 parser.add_argument('--mbmf', action = 'store_true', help='Enable model-based and model free learning')
+parser.add_argument('--stop_causal_update', type=int, default=5000, help='Number of steps till updating the causal model')
 
 args = parser.parse_args()
 
@@ -121,9 +122,7 @@ def select_action(policy_net, state, args, eval_mode = False):
     global steps_done
     sample = random.random()
     if eval_mode == False:
-        eps_threshold = min(1.0, max(0.05, 1 - (steps_done - args.burning)/(args.EPS_DECAY - args.burning)))
-        # eps_threshold = max(args.EPS_END,  min(1.0, args.EPS_START + ((steps_done - args.burning)/args.EPS_DECAY) * (args.EPS_END - args.EPS_START )))
-        #logger.info("Steps done {}, Epsilon {}".format(steps_done, eps_threshold))
+        eps_threshold = min(1.0, max(0.05, args.EPS_START - (steps_done - args.burning)/(args.EPS_DECAY - args.burning)))
         steps_done += 1
     else:
         eps_threshold = 0.05
@@ -195,7 +194,7 @@ def rollout_causal_models(models, start_state, env, n_actions, K, H, gamma):
         counts[k] = count
     env.reset_state(store_state)
     idx = np.argmax(rewards)
-    return seq_actions[idx][0:counts[idx]]
+    return seq_actions[idx][0:1]
 
 # # plt.imshow(state.detach().numpy().transpose(1,2,0))
 # # plt.show()
@@ -238,19 +237,24 @@ if args.mode in ["train", "both"]:
         total_episodes = 0
         pbar = tqdm(total = args.total_steps+1)
         while steps_done < args.total_steps:
-            count = count + 1
             if not args.mbmf or steps_done <= args.causal_update:
                 action, eps_threshold = select_action(policy_net, curr_state, args)
                 action_sequence = [action]
                 pbar.update(1)
+                count = count + 1
 
-            if args.mbmf and steps_done > args.causal_update:
+            if args.mbmf and steps_done > args.causal_update and steps_done < args.stop_causal_update:
                 if models is None:
                     models = causal_model(inp, args.l1, args.l2, args.rho, model_dir, n_actions, train_frac = 90)
                 state = {"curr_oo" : curr_X, "next_oo" : curr_X}
                 action_sequence = rollout_causal_models(models, state, env, n_actions, args.K, args.H, args.gamma)
                 steps_done = steps_done + len(action_sequence)
+                count = count + len(action_sequence)
                 pbar.update(len(action_sequence))
+
+                if steps_done == args.stop_causal_update:
+                    args.mbmf = False
+                    args.EPS_START = 0.10
                 # print(env.maze.x, env.maze.objects.agent.positions)
             N = len(action_sequence)
             
