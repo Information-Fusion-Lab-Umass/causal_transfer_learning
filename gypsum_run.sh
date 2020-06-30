@@ -8,5 +8,10 @@
 #SBATCH --mem-per-cpu=10240    # Memory in MB per cpu allocated
 #SBATCH --gres gpu:4
 
+<<<<<<< Updated upstream
 cd /home/ppruthi/causal_transfer_learning/
 PYTHONPATH=$PWD python ./codes/models/rl_approaches/DQN_main.py --height 10 --width 10 --render 0 --game_type trigger_non_markov --mode train --num-trials 10 --gamma 0.99 --use_causal_model  --causal_update 3000 --stop_causal_update 8000 --H 100 --max-episode-length 1000 --K 5 --mbmf
+=======
+# cd /home/ppruthi/causal_transfer_learning/
+PYTHONPATH=$PWD python ./codes/models/rl_approaches/DQN_main.py --height 10 --width 10 --render 0 --game_type trigger_non_markov --mode eval --num-trials 1 --gamma 0.99 --H 1000 --max-episode-length 1000 --K 5 --mbmf
+>>>>>>> Stashed changes

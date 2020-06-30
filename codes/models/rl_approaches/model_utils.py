@@ -54,26 +54,45 @@ def get_input_data(X):
     # print("Z {}".format(Z[0]))
     return X, X_orig, Z
 
-def plot_rewards(rewards, plot_name, GAMMA, std_error = False):
-    n_trials, n_episodes = rewards.shape
+def running_mean(x, N):
+    cumsum = np.cumsum(np.insert(x, 0, 0)) 
+    return (cumsum[N:] - cumsum[:-N]) / float(N)
+
+def plot_rewards(rewards1, rewards2, plot_name, GAMMA, std_error = False):
+    episodes = 10
+    print(rewards1.shape, rewards2.shape)
+   
+    n_trials, n_episodes = rewards1.shape
     
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
-    mean = np.mean(rewards, axis = 0)
-    std = np.std(rewards, axis = 0)
-    N = np.arange(n_episodes)
-    plt.plot(N, mean, label = "DQN")
+    mean1 = running_mean(np.mean(rewards1, axis = 0), episodes)
+    std1 = running_mean(np.std(rewards1, axis = 0), episodes)
+    
+    mean2 = running_mean(np.mean(rewards2, axis = 0), episodes)
+    std2 = running_mean(np.std(rewards2, axis = 0), episodes)
+    
+    N = np.arange(mean1.shape[0])
+    plt.plot(N, mean1, label = "DQN")
+    plt.plot(N, mean2, label = "Causal Model + DQN")
     if std_error == True:
-    	plt.fill_between(N, mean - std, mean + std, color='gray', alpha=0.2)
+    	plt.fill_between(N, mean1 - std1, mean1 + std1, color='gray', alpha=0.2)
+    plt.fill_between(N, mean2 - std2, mean2 + std2, color='blue', alpha=0.2)
+         
+    
     xmin = np.min(N) - 1
     xmax = np.max(N) + 1
-    ymin = np.min(mean - std) - 0.5
-    ymax = np.max(mean + std) + 0.5
+    y1min = np.min(mean1 - std1) - 0.5
+    y1max = np.max(mean1 + std1) + 0.5
+    y2min = np.min(mean2 - std2) - 0.5
+    y2max = np.max(mean2 + std2) + 0.5
+
+    ymin = min([y1min, y2min])
+    ymax = max([y2min, y2max])
+    print(xmin, xmax, ymin, ymax)
     plt.axis([xmin, xmax, ymin, ymax])
-    print(np.min(mean), np.max(mean))
-    # plt.plot(N, mean+std)
-    # plt.plot(np.arange(n_episodes), np.mean(rewards, axis = 0))
-    # plt.title("Q-learning rewards")
+    print(np.min(mean1), np.max(mean1))
+    print(np.min(mean2), np.max(mean2))
     plt.xlabel("Number of episodes")
     gamma = r'$\gamma$'
     plt.ylabel("Cumulative reward ({}= {})".format(gamma, GAMMA))
