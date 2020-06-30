@@ -322,6 +322,9 @@ if args.mode in ["train", "both"]:
             torch.save(policy_net.state_dict(), model_dir + "policy_net_DQN_{}_{}".format(args.gamma, args.use_causal_model))
             torch.save(target_net.state_dict(), model_dir + "target_net_DQN_{}_{}".format(args.gamma, args.use_causal_model))
         all_rewards.append(reward_vector)
+        rewards_array = np.array(all_rewards)
+        np.savez(plot_dir + "dqn_train_rewards_{}.npz".format(args.gamma), r = rewards_array)
+
     rewards_array = np.array(all_rewards)
     if args.save:
         np.savez(plot_dir + "dqn_train_rewards_{}.npz".format(args.gamma), r = rewards_array)

@@ -184,7 +184,7 @@ def causal_model(inp, l1, l2, rho, model_dir, n_actions, train_frac = 90):
             test_pred = model(X_te_torch, Z_te_torch)
             test_loss = squared_loss(test_pred, X_te_orig_torch)
 
-            X_eng = analyze(X_tr_orig_torch[check[0]].reshape(1,-1))
+            # X_eng = analyze(X_tr_orig_torch[check[0]].reshape(1,-1))
             # print(len(text_vars), X_eng.shape, train_pred.shape)
             # print("Train loss {}".format(train_loss.item()))
             # print("Test loss {}".format(test_loss.item()))
