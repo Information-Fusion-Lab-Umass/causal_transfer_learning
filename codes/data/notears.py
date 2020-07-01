@@ -1,3 +1,4 @@
+# Note that this code is taken from https://github.com/xunzheng/notears
 import scipy.optimize as sopt
 import numpy as np
 

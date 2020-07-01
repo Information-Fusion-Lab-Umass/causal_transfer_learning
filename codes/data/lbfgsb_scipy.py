@@ -1,3 +1,4 @@
+# Note that this code is taken from https://github.com/xunzheng/notears
 import torch
 import scipy.optimize as sopt
 
