@@ -60,8 +60,6 @@ def running_mean(x, N):
 
 def plot_rewards(rewards1, rewards2, plot_name, GAMMA, std_error = False):
     episodes = 10
-    print(rewards1.shape, rewards2.shape)
-   
     n_trials, n_episodes = rewards1.shape
     
     plt.rc('text', usetex=True)
@@ -89,10 +87,7 @@ def plot_rewards(rewards1, rewards2, plot_name, GAMMA, std_error = False):
 
     ymin = min([y1min, y2min])
     ymax = max([y2min, y2max])
-    print(xmin, xmax, ymin, ymax)
     plt.axis([xmin, xmax, ymin, ymax])
-    print(np.min(mean1), np.max(mean1))
-    print(np.min(mean2), np.max(mean2))
     plt.xlabel("Number of episodes")
     gamma = r'$\gamma$'
     plt.ylabel("Cumulative reward ({}= {})".format(gamma, GAMMA))

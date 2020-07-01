@@ -225,11 +225,9 @@ if args.mode in ["train", "both"]:
         if args.total_steps >= args.burning:
             loss_vector = np.zeros(args.total_steps - args.burning + 1)
         reward_vector = []
-        # Collect random data for initial burning period of 5000
         steps_done = 0
         total_rewards = 0
         models = None
-        # state = preprocess_image(env.reset(), args.device)
         curr_objects = env.maze.objects
         TARGET_UPDATE = args.TARGET_UPDATE
         count = 0
@@ -255,16 +253,12 @@ if args.mode in ["train", "both"]:
                 if steps_done == args.stop_causal_update:
                     args.mbmf = False
                     args.EPS_START = 0.10
-                # print(env.maze.x, env.maze.objects.agent.positions)
             N = len(action_sequence)
             
             
             for seq in range(N):
                 action = action_sequence[seq]
                 next_obs, reward, done, info = env.step(action)
-                # if args.mbmf and steps_done > args.causal_update:
-                    # print("============ {}/{}========== {} {}".format(seq, N, steps_done, done))
-                    
                 next_objects = env.maze.objects
                 next_X = get_oo_repr(count, next_objects, action, reward,n_actions)
                 next_state = next_X[:,indices]
@@ -279,14 +273,10 @@ if args.mode in ["train", "both"]:
 
                 if steps_done >= args.start_learn_thresh:
                     loss = optimize_model(optimizer, policy_net, target_net, memory, args.batch_size, args.device, args.gamma)
-                    # loss_vector[steps_done - args.burning] = loss.item()
-
                 if args.use_causal_model and steps_done >= args.start_learn_thresh and steps_done % args.causal_update == 0:
                     models = causal_model(inp, args.l1, args.l2, args.rho, model_dir, n_actions, train_frac = 90)
                     
-                    #logger.info("Step {} average Q-learning loss {:.4f}".format(steps_done, loss.item()))
                 if done:
-                    #logger.info("Winning Reward {}".format(reward))
                     logger.info("Won the game: count {} steps_done {} episodes {} rewards {:.2f} eps_threshold {:.2f}".format(count, steps_done, total_episodes, total_rewards, eps_threshold))
                     memory.push(curr_state, action, reward, next_state)
                     env, curr_state, curr_X = make_env(args)
@@ -332,24 +322,20 @@ if args.mode in ["train", "both"]:
 
 
 if args.mode in ["eval", "both"]:
-    dqn = np.load(plot_dir + "dqn_train_rewards_{}_{}.npz".format(args.gamma, args.use_causal_model), allow_pickle = True)['r']
-    dqn_causal = np.load(plot_dir + "dqn_train_rewards_{}_{}.npz".format(args.gamma, "mbmf"), allow_pickle = True)['r']
+    max_episodes = 4000 # maximum number of episodes after which results converge 
+    dqn = np.load(plot_dir + "dqn_train_rewards_{}_False.npz".format(args.gamma), allow_pickle = True)['r']
+    dqn_causal = np.load(plot_dir + "dqn_train_rewards_{}_mbmf.npz".format(args.gamma), allow_pickle = True)['r']
    
     min_len = 1e6
     for i in range(dqn.shape[0]):
-        print("DQN")
-        print(len(dqn[i]))
         if len(dqn[i]) < min_len:
             min_len = len(dqn[i])
 
     all_len = []
     for i in range(dqn.shape[0]):
-        print("DQN_causal")
-       
-        if len(dqn_causal[i]) < 3000:
+        if len(dqn_causal[i]) < max_episodes:
             continue
-        else:
-            print(len(dqn_causal[i]))
+        else:        
             all_len.append(i)
             if len(dqn_causal[i]) < min_len:
                 min_len = len(dqn_causal[i])
@@ -368,36 +354,4 @@ if args.mode in ["eval", "both"]:
             result2[i,j] = dqn_causal[k][j]
 
 
-    plot_rewards(result1, result2, plot_dir + "dqn_train_rewards_{}_{}_mbmf_final_var.png".format(args.gamma, args.use_causal_model), args.gamma, std_error = True)
-
-
-    # policy_net = DQN(args).to(device=args.device)
-    # policy_net.load_state_dict(torch.load(model_dir + "target_net_DQN_{}_{}".format(args.gamma, args.use_causal_model), map_location = torch.device(args.device)))
-    # rewards = np.zeros((args.num_trials, args.num_episodes))
-    # for trial in tqdm(range(args.num_trials)):
-    #     for i_episode in tqdm(range(args.num_episodes)):
-    #         count = 0
-    #         env, curr_state, curr_X = make_env(args)
-    #         curr_objects = env.maze.objects
-    #         total_rewards = 0
-    #         discount_factor = 1
-    #         for step in range(args.max_episode_length):
-    #             action, eps_threshold = select_action(policy_net, curr_state, args, eval_mode = True)
-    #             next_obs, reward, done, info = env.step(action)
-    #             next_objects = env.maze.objects
-    #             next_X = get_oo_repr(count, next_objects, action, reward,n_actions)
-    #             next_state = next_X[:,indices]
-    #             next_state = torch.tensor(next_state, device = args.device, dtype = torch.float32).reshape(1,-1)
-    #             count = count + 1
-    #             total_rewards = total_rewards + discount_factor* reward
-    #             discount_factor = discount_factor * args.gamma
-    #             curr_state = next_state
-    #             if args.render:
-    #                 env.render()
-    #                 time.sleep(0.1)
-    #             if done:
-    #                 print("Won the game in {} steps {}. Resetting the game!".format(step, total_rewards))
-    #                 break
-    #         rewards[trial, i_episode] = total_rewards
-            
-    #         logger.info("Trial {} Episode {} rewards {}".format(trial, i_episode, rewards[trial, i_episode]))
+    plot_rewards(result1, result2, plot_dir + "dqn_causal_model_train_rewards_{}.png".format(args.gamma), args.gamma, std_error = True)

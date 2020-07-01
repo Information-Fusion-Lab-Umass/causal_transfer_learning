@@ -1,37 +1,27 @@
-
-# causal_transfer_learning
 Repo containing code for running experiments related to causal transfer learning project.
 
-# Reinstall mazelab package
+- Install mazelab package
 
-pip install -e .
+`pip install -e .`
 
-# To generate data from different running environments, run following bash script
-
+- To generate data from different running environments, run following bash script
 Add game_type in below shell script
-./data.sh
+`./data.sh`
 
-# To generate data for single environment (height=10 and width = 10), run the following command
-PYTHONPATH=$PWD python codes/data/generate_data.py --random_obstacles 1 --height 10 --width 10
+- To generate data for single environment (height=10 and width = 10), run the following command
+`PYTHONPATH=$PWD python codes/data/generate_data.py --random_obstacles 1 --height 10 --width 10'
 
-# To analyze and save combined training data, run the following command:
-PYTHONPATH=$PWD python codes/data/analyze_data.py --game_type trigger_non_markov_flip --start 5 --stop 75
+- To analyze and save combined training data for structure learning, run the following command:
+`PYTHONPATH=$PWD python codes/data/analyze_data.py --game_type trigger_non_markov_flip --start 5 --stop 75`
 
-# To run the neural-network based model, use following command.
-PYTHONPATH=$PWD python codes/models/relation_learning/abstract_relation_reasoning.py --model linear --sparse 0 --group_lasso 1 --mode both --action up --penalty 1
+- To run the structure learning non-linear model, use following command.
+`PYTHONPATH=$PWD python codes/data/test_notears_nonlinear.py --game_type trigger_non_markov_flip --l1 0.01 --l2 0.01 --rho 1.0 --mode eval`
 
+- To train/eval DQN algorithm, use the following command.
+`PYTHONPATH=$PWD python codes/models/rl_approaches/DQN_main.py --height 10 --width 10 --render 0 --game_type trigger_non_markov --mode train --gamma 0.99`
 
-# To run the structure learning linear model, use following command.
-PYTHONPATH=$PWD python codes/data/test_notears_linear.py --game_type all_random --l 0.1 --rho 1 --alpha 0.0 --mode eval
+- To train/eval Causal + DQN algorithm, use the following command.
+`PYTHONPATH=$PWD python ./codes/models/rl_approaches/DQN_main.py --height 10 --width 10 --render 0 --game_type trigger_non_markov --mode train --num-trials 10 --gamma 0.99 --use_causal_model  --causal_update 3000 --stop_causal_update 8000 --H 100 --max-episode-length 1000 --K 5 --mbmf`
 
-# To run the structure learning non-linear model, use following command.
-PYTHONPATH=$PWD python codes/data/test_notears_nonlinear.py --game_type trigger_non_markov_flip --l1 0.01 --l2 0.01 --rho 1.0 --mode eval
-
-# To run q-learning algorithm, use the following command.
-PYTHONPATH=$PWD python codes/models/rl_approaches/q_learning.py --height 10 --width 10 --render 1
-
-# To run DQN algorithm, use the following command.
-PYTHONPATH=$PWD python codes/models/rl_approaches/DQN_main.py --height 10 --width 10 --render 0 --game_type trigger_non_markov --mode both
-
-# To run simulation of trajectories, run the following command
-PYTHONPATH=$PWD python codes/data/generate_trajectories.py --game_type trigger_non_markov_flip --l1 0.01 --l2 0.01 --rho 1.0 --random_obstacles 1 --height 10 --width 10 --render 0 --num_episodes 1 --max_episode_length 10 --num_trials 1
+- To generate plots for performance of DQN and Causal Algorithm use the following command.
+`PYTHONPATH=$PWD python ./codes/models/rl_approaches/DQN_main.py --height 10 --width 10 --render 0 --game_type trigger_non_markov --mode eval --num-trials 10 --gamma 0.99 --use_causal_model  --causal_update 3000 --stop_causal_update 8000 --H 100 --max-episode-length 1000 --K 5 --mbmf`
